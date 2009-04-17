@@ -1,0 +1,7 @@
+
+def main()
+{
+	local l = ("AA", 1) :: ("BB", 2) :: ("CC", 3) :: [];
+	debug_dump_mem();
+}
+

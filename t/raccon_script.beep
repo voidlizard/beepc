@@ -1,0 +1,661 @@
+@extern 0x10 seconds(void):int;
+@extern 0x13 str_crc16( string  ) : int ;
+@extern 0x14 modem_sms_receive_first( string ) : string ;
+@extern 0x15 modem_sms_send( string, string ) : bool ;
+@extern 0x16 modem_phone_book_del( int ) : void ;
+@extern 0x17 modem_phone_book_write( int, string, string) : void ;
+@extern 0x18 modem_phone_book_read(  int ) : string ;
+@extern 0x6D modem_toggle_power(void):void;
+@extern 0x1E nmea_read() : string;
+@extern 0x6E profile_write_string(int,string):void;
+@extern 0x6F profile_read_string(int):string;
+@extern 0x70 profile_commit(void):void;
+@extern 0x71 profile_write_int(int,int):void;
+@extern 0x72 profile_read_int(int):int;
+@extern 0x73 profile_read(void):bool;
+@extern 0x74 modem_check_registration(void) : void;
+@extern 0x75 modem_sms_exists(void) : bool;
+@extern 0x76 modem_set_online(int):bool;
+@extern 0x77 modem_gprs_init(string,string,string):bool;
+@extern 0x78 modem_tcp_util_read_http_status(int):int;
+@extern 0x79 modem_tcp_read(int,int,int):string;
+@extern 0x7A modem_tcp_close(int):bool;
+@extern 0x7B modem_tcp_write(int,string):int;
+@extern 0x7C modem_tcp_open(string,string):int;
+@extern 0x7D adjust_time(int,int,int):void;
+@extern 0x7E daytime(void):int;
+@extern 0x7F read_adc(int):int;
+@extern 0x6C gps_power(bool):void;
+
+@literal REG_TIMEOUT 300;
+@literal REG_SMS    "010000241";
+
+@literal SHOCK_DELTA 1;
+
+@literal MAGIC      0x9876;
+
+#@literal PINCODE    8046;
+@literal PINCODE    0xFFFF;
+@literal SMSC       "+79037976008";
+@literal APN        "internet.beeline.ru"; 
+@literal APN_LOGIN  "beeline";
+@literal APN_PASSW  "beeline";
+
+@literal  O_MAGIC     1;  # INT
+@literal  O_TRACK     2;  # INT
+@literal  O_ENERGY    3;  # INT
+@literal  O_GUARD     4;  # INT
+@literal  O_PORT      5;  # INT
+@literal  O_CNUM      6;  # INT
+@literal  O_SHOCK     7;  # INT
+@literal  O_IP       10;  # STRING(15)
+@literal  O_COOKIE   20;  # STRING(8)
+
+type nmea_gga { time_utc: string,
+                lat:      string,
+                lat_semi: string,
+                lon:      string,
+                lon_semi: string,
+                fix:      int,
+                sat:      int 
+              }
+
+type track_status { tr_geo:nmea_gga, tr_shock:bool }
+
+type bounds { xmin:int, xmax:int, ymin:int, ymax:int }
+
+def set_opt_int(key, val) {
+    profile_write_int(key, val);
+}
+
+def get_opt_int(key) {
+    ret profile_read_int(key);
+}
+
+def set_opt_str(key, val) {
+    profile_write_string(key, val);
+}
+
+def get_opt_str(key) {
+    ret profile_read_string(key);
+}
+
+def check_profile()
+{
+    if !profile_read() || profile_read_int(`O_MAGIC) != `MAGIC then
+    {        
+        set_opt_int(`O_MAGIC, `MAGIC);
+        set_opt_int(`O_TRACK,  0);
+        set_opt_int(`O_GUARD,  0);
+        set_opt_int(`O_ENERGY, 0);
+        set_opt_int(`O_PORT,   0);
+        set_opt_int(`O_CNUM,   0);
+        set_opt_int(`O_SHOCK,  0);
+        set_opt_str(`O_IP,     "");
+        set_opt_str(`O_COOKIE, "");
+        profile_commit();
+    }
+}
+
+def check_reg(reg_ts)
+{
+    local c     = get_opt_str(`O_COOKIE);
+    local ip    = get_opt_str(`O_IP);
+    local port  = get_opt_int(`O_PORT);
+    if (c == "" ||  ip == "" || port == 0 ) && (reg_ts == 0 || seconds() - reg_ts > `REG_TIMEOUT) then 
+    {
+        if send_sms(strconcat(strconcat(`REG_SMS, utoa(str_crc16(`REG_SMS),16)),"#"))
+        then ret seconds();
+        else ret reg_ts;
+    }
+    ret reg_ts;
+}
+
+def send_sms(sms)
+{
+    if modem_set_online(`PINCODE) then ret modem_sms_send(`SMSC, sms);
+    ret false;
+}
+
+def split_tag(s)
+{
+    local len = strlen(s);
+    local cpos = strfind(s, 0, ':');
+    if cpos >= len then ret ("","");
+    ret (strsub(s, 0, cpos), strsub(s, cpos+1, len-cpos-1));
+}
+
+def parse_sms(s)
+{
+    local data = strsub(s, 9, strlen(s)-9);
+    local len = strlen(data);
+    local i = 0, j = 0;
+    local tags = [];
+    while i < len
+    {
+        if strnth(data, i) == ';' then { 
+            tags = split_tag(strsub(data, j, i-j)) :: tags;
+            j = i + 1;
+        }
+        i = i + 1;
+    }
+    ret tags;
+}
+
+
+def process_sms() {
+    if !modem_set_online(`PINCODE) then ret false; 
+
+    local answ    = false;
+    local cnum    = 0;
+    local tags    = [];
+    local track   = get_opt_int(`O_TRACK);
+    local energy  = get_opt_int(`O_ENERGY);
+    local guard   = get_opt_int(`O_GUARD);
+    local port    = get_opt_int(`O_PORT);
+    local ip      = get_opt_str(`O_IP);
+    local cookie  = get_opt_str(`O_COOKIE);
+    local smsn    = 0;
+
+    while modem_sms_exists() {
+        local s  = modem_sms_receive_first(`SMSC);
+        local dt = daytime(); 
+        if validate_sms(s) then {
+            puts("SMS FOUND: ");
+            putsn(s);
+            local cnum1 = sms_cnum(s);
+
+            puts("DAYTIME / CNUM: ");
+            puts(utoa(daytime(),10));
+            puts(" / ");
+            putsn(utoa(cnum1,10));
+
+            if    cnum1 != 0 && dt != 0xFFFF && cnum1+60 < dt then continue;
+            elif  cnum1 != 0 && cnum1 < cnum                  then continue;
+
+            local code = sms_code(s);
+            cnum = cnum1;
+            answ = sms_answ(s) != 0 || answ;
+            smsn = smsn + 1;
+
+            local t = parse_sms(s);
+            if code == 0x20 || code == 0x25 then {
+                putsn("GOT STATUS!");
+                while !nil(t) {
+                    local h = head(t);
+                    if    "TO" == fst(h) then {putsn("TO FOUND!"); track  = strtoul(snd(h),16);}
+                    elif  "EO" == fst(h) then energy = strtoul(snd(h),16);
+                    elif  "GO" == fst(h) then guard  = strtoul(snd(h),16);
+                    elif  "SC" == fst(h) then {cookie = snd(h); putsn("COOKIE FOUND!"); }
+                    elif  "PT" == fst(h) then port   = strtoul(snd(h),10);
+                    elif  "IP" == fst(h) then ip     = snd(h);
+                    t = tail(t);
+                }
+            }
+        }
+    }
+
+    set_opt_int(`O_TRACK,  track);
+    set_opt_int(`O_ENERGY, energy);
+    set_opt_int(`O_GUARD,  guard);
+    set_opt_int(`O_PORT,   port);
+    set_opt_str(`O_IP,     strsub(ip,0,15));
+    set_opt_str(`O_COOKIE, strsub(cookie,0,8));
+
+    puts("GOT CNUM: ");
+    putsn(utoa(cnum,16));
+
+    if smsn != 0 then set_opt_int(`O_CNUM, cnum);
+
+    profile_commit();
+
+    ret answ;
+}
+
+
+def sms_get_tag(tagname, tags)
+{
+    local r = "";
+    local t = tags;
+    while !nil(t) {
+        local h = head(t);
+        if tagname == fst(h) then {
+            r = snd(h);
+            break;
+        }
+        t = tail(t);
+    }
+    ret r;
+}
+
+def sms_code(sms)
+{
+    ret strtoul(strsub(sms, 6, 2), 16);
+}
+
+def sms_answ(sms)
+{
+    ret strtoul(strsub(sms,8,1),16);
+}
+
+def sms_cnum(sms)
+{
+    ret strtoul(strsub(sms,2,4),16);
+}
+
+
+
+def validate_sms(s)
+{
+    local len =  strlen(s);
+    local crcend = strfind(s, 0, '#');
+    if len < 14 || crcend >= len then ret false;
+    
+    local crcs  = strsub(s, crcend-4, 4);
+    local data  = strsub(s, 0, crcend-4);
+    local crcs2 = leadz(utoa(str_crc16(data), 16),4);
+
+    ret crcs == crcs2 ;
+}
+
+
+def leadz(s, n)
+{
+    local l = strlen(s);
+    if l<n then ret strconcat(strmake(n-l,'0'),s);
+    ret s;
+}
+
+def send_status_http(data)
+{
+    local cookie = get_opt_str(`O_COOKIE);
+    local ip     = get_opt_str(`O_IP);
+    local port   = utoa(get_opt_int(`O_PORT),10);
+    local result = 0;
+   
+    if cookie == "" || port == "" || ip == "" then ret 0;
+
+    if !modem_gprs_init(`APN, `APN_LOGIN, `APN_PASSW) then ret 0;
+
+    local h = modem_tcp_open(ip, port);
+    if h != 0xFFFF then {
+        modem_tcp_write(h, "POST /app/http_rq:req HTTP/1.1\r\n");
+        modem_tcp_write(h, "User-Agent: raccoon 0.1\r\n");
+        modem_tcp_write(h, "Host: ");
+        modem_tcp_write(h, ip);
+        modem_tcp_write(h, ":");
+        modem_tcp_write(h, port);
+        modem_tcp_write(h, "\r\n");
+        modem_tcp_write(h, "Cookie: CS=");
+        modem_tcp_write(h, cookie);
+        modem_tcp_write(h, "\r\n");
+        modem_tcp_write(h, "Content-Type: application/binary\r\n");
+        modem_tcp_write(h, "Content-Length: ");
+        modem_tcp_write(h, utoa(strlen(data),10));
+        modem_tcp_write(h, "\r\n");
+        modem_tcp_write(h, "\r\n");
+        modem_tcp_write(h, data);
+        result = modem_tcp_util_read_http_status(h);
+        modem_tcp_close(h);
+    }
+    sleep_ms(10000);
+    #modem_toggle_power();
+    ret result;
+}
+
+def send_status_info(st)
+{
+    local smsc     = `SMSC; 
+    local  hdr     = "01";
+    local  tran    = leadz(utoa(get_opt_int(`O_CNUM),16),4);
+    local  confirm = "0";
+    local  guard   = leadz(utoa(get_opt_int(`O_GUARD),16),2);
+    local  energy  = leadz(utoa(get_opt_int(`O_ENERGY),16),2);
+    local  track   = leadz(utoa(get_opt_int(`O_TRACK),16),2);
+    local  pwr     = "";
+    local  hit     = "00";
+    local  cmd     = "26";
+
+    if st.tr_shock then hit = "01";
+
+    if read_adc(4) < 1000 then pwr = "00"; else pwr = "01";
+
+    local s = strconcat(hdr, tran);
+    s = strconcat(s, cmd);
+    s = strconcat(s, confirm);
+    s = strconcat(s, "UT:");
+    s = strconcat(s, st.tr_geo.time_utc);
+    s = strconcat(s, ";");
+    s = strconcat(s, "LA:");
+    s = strconcat(s, st.tr_geo.lat);
+    s = strconcat(s, ",");
+    s = strconcat(s, st.tr_geo.lat_semi);
+    s = strconcat(s, ";");
+    s = strconcat(s, "LO:");
+    s = strconcat(s, st.tr_geo.lon);
+    s = strconcat(s, ",");
+    s = strconcat(s, st.tr_geo.lon_semi);
+    s = strconcat(s, ";");
+    s = strconcat(s, "FX:");
+    s = strconcat(s, leadz(utoa(st.tr_geo.fix,16),2));
+    s = strconcat(s, ";");
+    s = strconcat(s, "GO:");
+    s = strconcat(s, guard);
+    s = strconcat(s, ";");
+    s = strconcat(s, "TO:");
+    s = strconcat(s, track);
+    s = strconcat(s, ";");
+    s = strconcat(s, "EO:");
+    s = strconcat(s, energy);
+    s = strconcat(s, ";");
+    s = strconcat(s, "HT:");
+    s = strconcat(s, hit);
+    s = strconcat(s, ";");
+    s = strconcat(s, "PW:");
+    s = strconcat(s, pwr);
+    s = strconcat(s, ";");
+    s = strconcat(s, leadz(utoa(str_crc16(s),16), 4));
+    s = strconcat(s, "#");
+
+    puts("SMS: ");
+    putsn(s);
+
+    local code = send_status_http(s);
+    
+    if code == 200 then ret;
+
+    if code == 401 then {
+        putsn("FUCKUP 401");
+        set_opt_str(`O_COOKIE, "");
+        profile_commit();
+    }
+
+    send_sms(s);
+}
+
+def empty_gga()
+{
+    ret { time_utc="",  lat="",      lat_semi="",
+          lon="",       lon_semi="", fix=0,
+          sat=0
+          of nmea_gga
+        };
+}
+
+def nmea_parse_gga(s)
+{
+    local c = '^', i = 0, j = 0, comma = 0;
+    local len = strlen(s);
+
+    local utc = "", lat = "",   lat_s = "", 
+          lon = "", lon_s = "", fix = 0, 
+          sat = 0;
+
+    while i < len {
+        c = strnth(s, i);
+        if c == ',' || c == '*' then 
+        {
+            comma = comma + 1;
+            if   comma == 2 then utc   = strsub(s, j, 6);
+            elif comma == 3 then lat   = strsub(s, j, i-j);
+            elif comma == 4 then lat_s = strsub(s, j, i-j);
+            elif comma == 5 then lon   = strsub(s, j, i-j);
+            elif comma == 6 then lon_s = strsub(s, j, i-j);
+            elif comma == 7 then fix   = strtoul(strsub(s, j, i-j),10);
+            elif comma == 8 then sat   = strtoul(strsub(s, j, i-j),10);
+            j = i+1;
+        }
+        i = i + 1;
+        if i == len || c == '*' then break;
+    }
+
+    ret { time_utc=utc, lat=lat, lat_semi=lat_s,
+          lon=lon,      lon_semi=lon_s,
+          fix=fix,      sat=sat
+          of nmea_gga
+        };
+}
+
+
+def read_geo()
+{
+    local r = empty_gga();
+    local i = 0;
+    while i < 40 {
+        local nmeas = nmea_read();
+        putsn(nmeas);
+        if startswith(nmeas, "$GPGGA") then {
+            r = nmea_parse_gga(nmeas);
+            if r.sat > 0 then {
+                puts("SAT: ");
+                putsn(utoa(r.sat,10));
+                local t = r.time_utc;
+                local h = strtoul(strsub(t,0,2),10);
+                local m = strtoul(strsub(t,2,2),10);
+                local s = strtoul(strsub(t,4,2),10);
+                puts(strsub(t,0,2));
+                puts(strsub(t,2,2));
+                putsn(strsub(t,4,2));
+                adjust_time(h,m,s);
+            }
+            break;
+        }
+        i = i + 1;
+    }
+    ret r;
+}
+
+def dump_profile()
+{
+    puts("PROFILE: ");
+    puts(utoa(get_opt_int(`O_MAGIC),16));
+    puts(" ");
+    puts(utoa(get_opt_int(`O_TRACK),16));
+    puts(" ");
+    puts(utoa(get_opt_int(`O_GUARD),16));
+    puts(" ");
+    puts(utoa(get_opt_int(`O_ENERGY),16));
+    puts(" ");
+    puts(utoa(get_opt_int(`O_CNUM),16));
+    puts(" ");
+    puts(utoa(get_opt_int(`O_SHOCK),16));
+    puts(" ");
+    puts(utoa(get_opt_int(`O_PORT),10));
+    puts(" ");
+    puts(get_opt_str(`O_IP));
+    puts(" ");
+    puts(get_opt_str(`O_COOKIE));
+    putsn("");
+}
+
+def track_seconds(t, e)
+{
+    if   t == 0 then ret 0;
+    elif e == 0 then ret 240;
+    elif e == 1 then ret 900;
+    ret 300;
+}
+
+
+def tracking( ts )
+{
+    local dt  = track_seconds(get_opt_int(`O_TRACK), get_opt_int(`O_ENERGY));
+    if dt == 0 then ret false;
+    ret seconds() - ts >= dt;
+}
+
+def calc_bounds()
+{
+    local i = 0;
+    local xmin = 0xFFFF, xmax = 0, ymin = 0xFFFF, ymax = 0;
+    while i < 100 {
+        local x = read_adc(1);
+        local y = read_adc(2);
+        
+        if x < xmin then xmin = x;
+        if x > xmax then xmax = x;
+
+        if y < ymin then ymin = y;
+        if y > ymax then ymax = y;
+
+        i = i + 1;
+        sleep_ms(20);
+    }
+
+    ret { xmin = xmin - `SHOCK_DELTA, 
+          xmax = xmax + `SHOCK_DELTA,
+          ymin = ymin - `SHOCK_DELTA,
+          ymax = ymax + `SHOCK_DELTA
+         of bounds };
+}
+
+
+def check_shock(do_it, b)
+{
+    if !do_it then ret false;
+
+    local x0 = 0, x1 = 0, x2 = 0, x3 = 0, x4 = 0, x5 = 0;
+    local y0 = 0, y1 = 0, y2 = 0, y3 = 0, y4 = 0, x6 = 0;
+    local alarmx = 0, alarmy = 0;
+    local j = 0;
+    local shock = 0;
+
+    while j < 30 {
+        local i = 0;
+        
+        if read_adc(4) < 1000 then 
+        {
+            shock = 4;
+            break;
+        }
+        
+        while i < 5 
+        {
+            sleep_ms(20);
+
+            if   i == 0 then {x0 = read_adc(1); y0=read_adc(2); }
+            elif i == 1 then {x1 = read_adc(1); y1=read_adc(2); }
+            elif i == 2 then {x2 = read_adc(1); y2=read_adc(2); }
+            elif i == 3 then {x3 = read_adc(1); y3=read_adc(2); }
+            elif i == 4 then {x4 = read_adc(1); y4=read_adc(2); }
+            elif i == 5 then {x3 = read_adc(1); y4=read_adc(2); }
+
+            alarmx = 0;
+            alarmy = 0;
+
+            if x0 != 0 && x0 > b.xmax || x0 < b.xmin then alarmx = alarmx + 1;
+            if x1 != 0 && x1 > b.xmax || x1 < b.xmin then alarmx = alarmx + 1;
+            if x2 != 0 && x2 > b.xmax || x2 < b.xmin then alarmx = alarmx + 1;
+            if x3 != 0 && x3 > b.xmax || x3 < b.xmin then alarmx = alarmx + 1;
+            if x4 != 0 && x4 > b.xmax || x4 < b.xmin then alarmx = alarmx + 1;
+
+            if y0 != 0 && y0 > b.ymax || y0 < b.ymin then alarmy = alarmy + 1;
+            if y1 != 0 && y1 > b.ymax || y1 < b.ymin then alarmy = alarmy + 1;
+            if y2 != 0 && y2 > b.ymax || y2 < b.ymin then alarmy = alarmy + 1;
+            if y3 != 0 && y3 > b.ymax || y3 < b.ymin then alarmy = alarmy + 1;
+            if y4 != 0 && y4 > b.ymax || y4 < b.ymin then alarmy = alarmy + 1;
+
+            i = i + 1;
+        }
+        if alarmx > 3 || alarmy > 3  then 
+        {
+            alarmx = 0;
+            alarmy = 0;
+            shock = shock + 1;
+        }
+
+        j = j + 1;
+    }
+    ret (shock > 3);
+}
+
+def check_power()
+{
+    local ts = 0;
+    sleep_ms(1000);
+    while true {
+        local power = read_adc(4);
+        if    power > 1000 && ts == 0 then ts = seconds();
+        elif  power < 1000            then ts = 0;
+
+        if ts != 0 && seconds() - ts > 10 then break;
+        else sleep_ms(200);
+    }
+}
+
+def main()
+{
+    #check_power();
+    gps_power(true);
+    check_profile();
+    local reg_ts   = 0;
+    local tracked_at = 0;
+    local shocked = 0;
+    local bounds = calc_bounds();
+    while true 
+    {
+        local shock  = false;
+        local answ   = false;
+        local guard  = get_opt_int(`O_GUARD);
+        local do_check_shock = false;
+    
+        if guard != 0 && shocked == 0 then do_check_shock = true;
+
+        puts("SHOKED: ");
+        puts(utoa(shocked,10));
+        puts(" GUARD: ");
+        putsn(utoa(guard,10));
+
+        puts("TIME: ");
+        putsn(utoa(seconds(),10));
+        dump_profile();
+        
+        reg_ts = check_reg(reg_ts);
+        shock = check_shock(do_check_shock, bounds) || shock;
+        if shock then putsn("SHOCK");
+        
+        guard  = get_opt_int(`O_GUARD);
+        answ = process_sms();
+        shock = check_shock(do_check_shock, bounds) || shock;
+        if shock then putsn("SHOCK");
+
+        puts(" GUARD AFTER SMS: ");
+        putsn(utoa(guard,10));
+
+        if guard != get_opt_int(`O_GUARD) then {
+            bounds = calc_bounds();
+            shocked = 0;
+            if guard > 0 then {
+                putsn("TURN OFF TRACKING");
+                set_opt_int(`O_TRACK, 0);
+                profile_commit();
+            }
+        }
+
+        puts(" TRACK AFTER SMS: ");
+        putsn(utoa(get_opt_int(`O_TRACK),10));
+
+        local geo = read_geo();
+        shock = check_shock(do_check_shock, bounds) || shock;
+        if shock then putsn("SHOCK");
+
+        local do_track = tracking( tracked_at );
+        if do_track then tracked_at = seconds();
+
+        if shock then shocked = shocked + 1;
+
+        if shock then putsn("SHOCK");
+
+        if shock && shocked < 2 then {
+            set_opt_int(`O_TRACK, 1);
+            profile_commit();
+        }
+
+        answ = answ || do_track || (shock && shocked < 2);
+
+        if answ 
+        then send_status_info( { tr_geo=geo, tr_shock=shock of track_status} );
+        gc();
+    }
+}
+

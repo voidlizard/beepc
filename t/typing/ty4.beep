@@ -1,0 +1,12 @@
+
+def proc()
+{
+	local a, b, c = 0;
+    a = a + 2;
+    b = 1;
+    local moo = false;
+    local zoo;
+    zoo = "QQQQQ";
+    local bin = ~a;
+}
+

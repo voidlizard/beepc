@@ -1,0 +1,9 @@
+
+
+def main () {
+	local a = 3;
+	local b = 2;
+	local c = 0;
+	c = a*a + 2*b*a + b*b;
+}
+

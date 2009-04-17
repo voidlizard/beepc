@@ -1,0 +1,70 @@
+
+extern(0x1E, nmea_read : void -> string );
+
+def nmea_parse_gga(s)
+{
+	local c, i = 0, j = 0, comma = 0;
+	local len = strlen(s);
+
+	while c != '*' {
+		c = strnth(s, i); 
+		if c == ',' then 
+		{
+			comma = comma + 1;
+			if comma == 2 then {
+				puts("UTC:");
+				putsn(strsub(s, j, i-j));
+			}
+			elif comma == 3 then
+			{
+				puts("LAT:");
+				putsn(strsub(s, j, i-j));
+			}
+			elif comma == 4 then
+			{
+				puts("LAT_SEMI:");
+				putsn(strsub(s, j, i-j));
+			}
+			elif comma == 5 then
+			{
+				puts("LON:");
+				putsn(strsub(s, j, i-j));
+			}
+			elif comma == 6 then
+			{
+				puts("LON_SEMI:");
+				putsn(strsub(s, j, i-j));
+			}
+			elif comma == 7 then
+			{
+				puts("FIX:");
+				putsn(strsub(s, j, i-j));
+			}
+			elif comma == 8 then
+			{
+				puts("SAT:");
+				putsn(strsub(s, j, i-j));
+			}
+			j = i+1;
+		}
+		i = i + 1;
+		if i == len || c == '*' then break;
+	}
+}
+
+def main()
+{
+	local nmea = "";
+	local parsed = [];
+	while true {
+		nmea = nmea_read();
+		if startswith(nmea, "$GPGGA") then {
+			putsn(nmea);
+			nmea_parse_gga(nmea);
+		}
+		sleep_ms(500);
+		nmea = "";
+	}
+}
+
+

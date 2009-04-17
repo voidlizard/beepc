@@ -1,0 +1,9 @@
+
+def proc(a) {
+    ret a + 1;
+}
+
+def main () {
+    proc(1);
+}
+

@@ -1,0 +1,16 @@
+
+def main()
+{
+	putc('H');
+	putc('E');
+	putc('L');
+	putc('L');
+	putc('O');
+	putc(' ');
+	putc('W');
+	putc('O');
+	putc('R');
+	putc('L');
+	putc('D');
+}
+

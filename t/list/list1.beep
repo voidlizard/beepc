@@ -1,0 +1,7 @@
+
+def main()
+{
+	local l1 = [];
+	local l2 = 1 :: 2 :: [];
+}
+

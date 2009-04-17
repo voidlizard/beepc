@@ -1,0 +1,13 @@
+
+record { a_rec of a:int, b:string, c:bool }
+
+
+def main()
+{
+	local x = { a_rec of a:10, b:"JOPA", c:false };
+	local y = x.a;
+	debug_dump_mem();
+	debug_dump();
+	putsn(x.b);
+}
+

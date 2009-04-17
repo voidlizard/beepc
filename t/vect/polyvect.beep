@@ -1,0 +1,13 @@
+
+
+def main()
+{
+    local vi:[<int>]   = vect_make(10);
+    local vi2  = vect_make(10);
+    vect_set(vi2,5,10);
+    local s = vect_get(vi2,5);
+    s = "QQQ";
+}
+
+
+

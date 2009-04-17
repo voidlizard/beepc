@@ -1,0 +1,9 @@
+
+extern (0x10, jopa  : string -> void );
+
+def main()
+{
+    puts("AAAA");
+    jopa("AAAA");
+}
+

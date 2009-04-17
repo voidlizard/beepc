@@ -1,0 +1,17 @@
+
+def proc1(a, b, c, d) {
+    ret a + b + c + d;
+}
+
+def proc2(a,b) {
+    ret (1 + a) << b;
+}
+
+
+def main () {
+    local a = 0;
+    local b = 1;
+    local c = 2;
+    a = proc1(a,b,proc2(c+b/2,1,5,6),1);
+}
+

@@ -1,0 +1,10 @@
+
+def main () {
+	local a = 0;
+	while true {
+		a = a + 2;
+        if a < 10 then continue;
+	}
+}
+
+

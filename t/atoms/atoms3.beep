@@ -1,0 +1,18 @@
+
+
+def nmea_parse_gga(s)
+{
+	local i = 7, j = 0, s = "";
+	local res = [];
+
+	#utc time HHMM
+
+	res = (`Moo, s) :: [];
+
+}
+
+def main()
+{
+}
+
+

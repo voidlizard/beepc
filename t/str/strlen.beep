@@ -1,0 +1,11 @@
+
+def main()
+{
+	local a = "JUMP JUMP MF";
+	local b = strdup(a);
+
+	put_int(strlen(b));
+	putc(' ');
+	put_int(strlen(a));
+}
+

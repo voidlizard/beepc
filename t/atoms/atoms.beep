@@ -1,0 +1,9 @@
+
+
+def main()
+{
+	local me = `Jopa;
+	local be = `Kita;
+	local eq = me == be;
+}
+

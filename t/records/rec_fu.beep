@@ -1,0 +1,13 @@
+
+record { rec_a of a:int, b:bool }
+record { rec_b of a:int, b:bool }
+
+
+def main()
+{
+	local a = { rec_a of a:22, b:false };
+	local b = { rec_b of a:33, b:true };
+
+	a = b;
+}
+

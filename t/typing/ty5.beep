@@ -1,0 +1,9 @@
+
+def proc1(arg1, arg2)
+{
+	local z = arg2 + 1;
+	if arg1 
+	then ret 1;
+	else ret 2;
+}
+

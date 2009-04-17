@@ -1,0 +1,13 @@
+
+def func_a(a,b,c)
+{
+    ret a + b + c;
+}
+
+
+def func_b(a,b)
+{
+    local q = func_a(1,2,3);
+    ret func_a(a+b,b*a,q);
+}
+

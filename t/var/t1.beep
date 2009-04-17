@@ -1,0 +1,6 @@
+
+def main () {
+	local a = 1, b = 2, c = 3;
+	local d = 0xFF;
+	a + 1 - (b+2)*c - d;
+}

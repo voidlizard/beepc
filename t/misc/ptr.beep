@@ -1,0 +1,11 @@
+
+def qqq() {
+	ret 0;
+}
+
+
+def main() {
+	local a;
+	a = qqq();
+}
+

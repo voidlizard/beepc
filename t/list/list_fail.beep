@@ -1,0 +1,9 @@
+
+
+def main()
+{
+    local l1 = "AA" :: [];
+    local l2 = 1 :: [];
+    local l3 = 1 :: "AA" :: [];
+    local l4 = [];
+}

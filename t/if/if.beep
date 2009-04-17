@@ -1,0 +1,8 @@
+
+def main()
+{
+	local i;
+	if   i == 0 then put_int(0);
+	else put_int(0xFFFF);
+}
+

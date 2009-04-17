@@ -1,0 +1,8 @@
+
+def jopa_kita()
+{
+	local a = 22;
+	local b = 33;
+	ret a+b;
+}
+

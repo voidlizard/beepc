@@ -1,0 +1,10 @@
+def proc(a,b,c,d)
+{
+}
+
+def main()
+{
+    proc(1+3*2,2,3,4);
+    putc(1);
+}
+

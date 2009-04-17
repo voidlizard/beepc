@@ -1,0 +1,7 @@
+
+def main () {
+	local a = 10, b = 30;
+	local c = b;
+	ret a + c;
+}
+

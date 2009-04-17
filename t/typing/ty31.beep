@@ -1,0 +1,11 @@
+def proc1()
+{
+}
+
+def proc(arg1, arg2)
+{
+    local z, y;
+	z = proc1();
+	y = z + 1;
+}
+

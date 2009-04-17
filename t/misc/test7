@@ -1,0 +1,59 @@
+
+def jopa {
+}
+
+def qqq {
+	ret x*x;
+}
+
+def test_logic {
+	a  == b;
+	a1 != b1;
+	a2 > b2;
+	a3 < b3;
+	a4 >= b4;
+	a5 <= b5;
+}
+
+
+def test_logic {
+	!a;
+	a && b;
+	c || d;
+	true == z;
+	false == zz;
+	true == false;
+	z == true;
+	zz == false;
+}
+
+def test_literals {
+	0xFF;
+	0XFF;
+	-22;
+	--33;
+	- -2;
+	z - y;
+}
+
+def test_bitwise {
+	a << 3;
+	a >> 4;
+	a ^ 0X03;
+	a | 0x80;
+	a & 0xFF;
+	~a;
+}
+
+def test_var {
+	local a;
+	local k = a = 10;
+	ret a;
+}
+
+
+# main function
+def main {
+	ret (x+y)*z/299;
+}
+

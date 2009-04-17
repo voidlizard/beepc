@@ -1,0 +1,7 @@
+
+def somefunc(a,b,c,d,e,f)
+{
+	if a then ret 1; else ret 0;
+}
+
+

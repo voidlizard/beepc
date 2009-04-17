@@ -1,0 +1,9 @@
+
+def main () {
+	local b = 1;
+	local c = -1;
+	local d = -b;
+	c = -b;
+}
+
+

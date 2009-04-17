@@ -1,0 +1,26 @@
+
+def test_alloc()
+{
+	puts("ALLOCATING...\n");
+	alloc(10);
+	puts("OK...\n");
+	debug_dump();
+	puts("ALLOCATING...\n");
+	alloc(100);
+	puts("OK...\n");
+	debug_dump();
+}
+
+def main()
+{
+	local i = 65535;
+	while i {
+		if i%3 == 0  then { 
+			put_int(i);
+			putc('\n');
+		}
+		test_alloc();
+		i = i - 1;
+	}
+}
+

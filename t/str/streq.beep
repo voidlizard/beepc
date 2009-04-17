@@ -1,0 +1,21 @@
+
+def main()
+{
+	local a = "JOPA";
+	local b = strdup(a);
+	local e = "BEBE";
+	local z = "MOO";
+
+	streq(a,b);
+	debug_dump();
+
+	streq(b,e);
+	debug_dump();
+
+	streq(e,z);
+	debug_dump();
+
+	puts("COMPARE MEGASTRING");
+	streq("MEGASTRING",strdup("MEGASTRING"));
+	debug_dump();
+}

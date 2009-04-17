@@ -1,0 +1,8 @@
+
+def main () {
+    local a = 0;
+    while true {
+        a = a + 1;
+    }
+}
+

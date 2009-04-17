@@ -1,0 +1,12 @@
+
+def main()
+{
+	local s1 = (`Jopa, "JOPA");
+	local qq = (`Kita, "KITA");
+	local moo = (`Jopa, "TRESKI");
+	local qoo = (`Jopa, "MEDVEDA") :: (`Kita, "PLAVNIK") :: (`Puzo, "SOBAKI") :: [];
+	`Jopa;
+	`Kita;
+	`Puzo;
+}
+

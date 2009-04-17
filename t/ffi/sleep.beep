@@ -1,0 +1,10 @@
+
+
+def main()
+{
+	while true
+	{
+		putc('.');
+		sleep_ms(1000);
+	}
+}

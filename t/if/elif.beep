@@ -1,0 +1,11 @@
+
+def main()
+{
+	local i = 10;
+	if   i == 0 then putsn("0");
+	elif i == 1 then putsn("1");
+	elif i == 2 then putsn("2");
+	elif i == 3 then putsn("3");
+	else putsn("oops");
+}
+

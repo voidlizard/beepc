@@ -1,0 +1,15 @@
+
+def main()
+{
+	local a = "ABC";
+	a = "JOPA";
+	local b = "";
+	b = "ABC";
+    "ABC";
+    "ABC";
+    "ABC";
+    "ABC";
+    "ABC";
+}
+
+

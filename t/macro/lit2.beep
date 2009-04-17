@@ -1,0 +1,12 @@
+@literal zabor  "ZABOR";
+@literal golova "GOLOVA";
+@literal thirty_five 35;
+
+def main()
+{
+	local eq   = `zabor == `golova;
+	local eq2  = `zabor == "GOLOVA";
+	local a = `thirty_five;
+	#local moo = a == `zabor; #BDYSH...
+}
+

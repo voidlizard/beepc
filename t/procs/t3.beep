@@ -1,0 +1,16 @@
+
+def proc1(a, b) {
+    local z = 10;
+    ret a*b + z;
+}
+
+def proc2(a) {
+    ret a+150;
+}
+
+
+def main() {
+    local a = 20, b;
+    b = proc1(proc2(a+1), proc2(20));
+}
+

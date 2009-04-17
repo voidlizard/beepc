@@ -1,0 +1,8 @@
+
+record { rec_a of a:bool, c:string }
+
+def main()
+{
+	local ll = { rec_a of a:false, c:"JOPA" } :: [];
+}
+

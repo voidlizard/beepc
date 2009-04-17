@@ -1,0 +1,7 @@
+
+def main () {
+    local a = 22;
+    if a > 0 then a = 1; else a = 2;
+}
+
+

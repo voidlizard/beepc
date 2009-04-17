@@ -1,0 +1,12 @@
+
+def main()
+{
+	local a = '\r';
+	local b = '\n';
+	local c = 'A';
+	local d = '\\';
+	local e = '\x01';
+	local f = '\'';
+	putc(f);
+}
+

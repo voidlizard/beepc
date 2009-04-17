@@ -1,0 +1,6 @@
+
+def main () {
+    local a = true;
+    local b = false;
+}
+

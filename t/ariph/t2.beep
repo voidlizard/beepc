@@ -1,0 +1,5 @@
+
+def main () {
+	local a = 1, b = 0;
+	local c = !b && !a;
+}

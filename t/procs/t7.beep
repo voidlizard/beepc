@@ -1,0 +1,13 @@
+
+def qqq() {
+	local a = 0;
+	a = a + 1;
+}
+
+def main() 
+{
+	local q  = 22;
+	q = qqq() + 2;
+}
+
+

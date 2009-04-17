@@ -1,0 +1,22 @@
+
+def main (x) {
+	local a;
+}
+
+def main1 (x, y, z) {
+	local a;
+}
+
+def main2 () {
+	local a;
+	main(a);
+	main1(a, 2, 3);
+}
+
+def main4 () {
+	local a = 1, b;
+}
+
+def main5 () {
+	local a, b, c;
+}

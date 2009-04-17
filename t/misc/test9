@@ -1,0 +1,29 @@
+
+
+def main () {
+	if 1 then { local b; ret b; }
+	if 2 then ret 23;
+	if 3 then {} else 15;
+	if 3 then {} else { ret 15; }
+}
+
+
+def main2 () {
+	if    2 then ret 16; 
+	elif 3 then ret 15;
+	else ret 66;
+}
+
+def main3 () {
+	if    2 then ret 16; 
+	elif 3 then ret 15;
+	elif 5 then ret 16;
+}
+
+def main4 () {
+	while 1 > 1 {
+		main3();
+		break;
+	}
+}
+

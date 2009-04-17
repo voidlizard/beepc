@@ -1,0 +1,17 @@
+
+def main () {
+    local a = 22;
+	local b = 30;
+    if a > 5 
+    then a = 1;
+    elif a > 6 then a = 2;
+    elif a > 7 then a = 3;
+    elif a > 8 then 
+	{ if b == 30   then b = 1;
+	  elif b == 40 then b = 2; 
+	  else b = 0; 
+	}
+    else a = 0;
+}
+
+

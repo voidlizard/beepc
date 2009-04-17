@@ -1,0 +1,7 @@
+
+def main()
+{
+	puts("HELLO WORLD");
+	debug_dump();
+}
+

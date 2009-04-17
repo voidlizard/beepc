@@ -1,0 +1,10 @@
+
+def main()
+{
+	putsn(utoa(0xDEAD, 16));
+	putsn(utoa(0xFFFF, 16));
+	putsn(utoa(0x1000, 16));
+	putsn(utoa(0x8000, 16));
+}
+
+

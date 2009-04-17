@@ -1,0 +1,29 @@
+
+@extern 0x45 vect_make_int(int):[<int>];
+
+def main()
+{
+    putsn("TEST VECTOR");
+    local v = vect_make_int(11);
+    puts("SIZE: ");
+    putsn(utoa(vect_len(v),10));
+    
+    vect_set(v, 0,  0xFFFF);
+    vect_set(v, 1,  0xDDDD);
+    vect_set(v, 20, 0xEEEE);
+
+    puts("v[0]: ");
+    putsn(utoa(vect_get(v,0),16));
+
+    puts("v[1]: ");
+    putsn(utoa(vect_get(v,1),16));
+
+    puts("v[2]: ");
+    putsn(utoa(vect_get(v,2),16));
+
+    puts("v[20]: ");
+    putsn(utoa(vect_get(v,20),16));
+
+    debug_dump_mem();
+}
+

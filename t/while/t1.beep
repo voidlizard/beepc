@@ -1,0 +1,11 @@
+
+def main () {
+	local a = 0;
+	local b = 100;
+	while a < 100 {
+		a = a + 1;
+		b = b - 1;
+	}
+}
+
+

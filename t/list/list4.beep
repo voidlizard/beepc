@@ -1,0 +1,11 @@
+
+def qq()
+{
+}
+
+def main()
+{
+	local c = [];
+	qq();
+}
+

@@ -1,0 +1,22 @@
+
+
+def main()
+{
+	local A = "010000201eo:e;go:1;to:0;72EE#";
+	while true {
+		local a = strdup(A);
+		local i = 0;
+		local sz = strlen(a);
+		a = strsub(a, 9, sz-9);
+		sz = strlen(a);
+		putsn(strsub(a, 0, sz-5));
+		while i < sz {
+			putc(strnth(a, i));
+			putc(':');
+			i = i + 1;
+		}
+		putsn("\nOK");
+		sleep_ms(1000);
+	}
+}
+

@@ -1,0 +1,13 @@
+
+def proc1(a, v) {
+    local d = 0;
+    d = a + v;
+}
+
+def main (a, b) {
+	local c = 10, d = 20;
+    local e = 0;
+    e = a + b + c + d;
+    d = e;
+}
+

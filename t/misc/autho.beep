@@ -1,0 +1,23 @@
+
+def qq() {
+	local a;
+}
+
+def print(s) {
+	ret 0;
+}
+
+def sms_received() {
+	ret 0;
+}
+
+def poo() {
+}
+
+def main() {
+
+	if sms_received() then print("COOL");
+	poo();
+
+}
+

@@ -1,0 +1,9 @@
+
+def main()
+{
+	local a = strdup("AA");
+	if a == "AA" then putsn("AA == AA");
+	if a != "BB" then putsn("AA != BB");
+	if a == "BB" then putsn("WTF?");
+}
+

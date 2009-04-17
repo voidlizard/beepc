@@ -1,0 +1,8 @@
+
+
+def func1()
+{
+	ret 1;
+	ret "JOPA";
+}
+

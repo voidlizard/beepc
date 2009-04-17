@@ -1,0 +1,11 @@
+
+def main()
+{
+	local b = "AAAA\tBBB";
+	local c = "CCCC\nDDD";
+	local q = "A\"QUOTE\"";
+	local d = "ONE \x4F\x4a\x4C\x41 TWO \x41";
+	local e = "\x41\x42\x43";
+	local f = "HELLO WORLD";
+}
+

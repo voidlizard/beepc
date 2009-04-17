@@ -1,0 +1,37 @@
+
+def odd(n)
+{
+	local q = "ODD:";
+	puts(q);
+	put_int(n);
+	puts("\n");
+}
+
+def even(n)
+{
+	local q = "EVEN:";
+	puts(q);
+	put_int(n);
+	puts("\n");
+}
+
+def odd_or_even(i)
+{
+	if (i % 2) != 0 then {
+		odd(i);
+	} else {
+		even(i);
+	}
+}
+
+
+def main()
+{
+	local i = 1;
+	while i < 15 {
+		odd_or_even(i);
+		i = i + 1;
+	}
+	debug_dump();
+}
+

@@ -1,0 +1,18 @@
+
+def main () {
+	local a = 0;
+	local b = 0;
+	{
+		local a = 1;
+		b = a;
+		{
+			local a = 2;
+			b = a;
+			{
+				local z = a;
+			}
+		}
+	}
+	b = a;
+}
+

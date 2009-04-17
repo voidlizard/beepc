@@ -1,0 +1,12 @@
+
+def fun1(s)
+{
+	ret s;
+}
+
+def jopa()
+{
+	local a = "STR", b = 1;
+	local z = fun1(1);
+}
+

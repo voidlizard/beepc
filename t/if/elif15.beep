@@ -1,0 +1,9 @@
+
+def main()
+{
+	local i = 1;
+	local b = 2;
+	if i == 1 then { if b == 3 then put_int(3); else put_int(33); }
+	else put_int(0);
+}
+

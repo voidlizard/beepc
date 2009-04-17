@@ -1,0 +1,8 @@
+
+import something;
+
+def main () {
+	local a = 0;
+	a = a + 1;
+}
+

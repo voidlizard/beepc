@@ -1,0 +1,28 @@
+
+def main () {
+	local  a = 1, b  = 12;
+	local  c = a << b;
+	local  e = c >> b;
+	local  q = 1;
+	q = q << 4;
+}
+
+def main2 () {
+	local a = 1, b = 0;
+	if a && b then ret 0; else ret 1;
+}
+
+def main3 () {
+	local a = 1, b = 0;
+	if a || b then ret 0; else ret 1;
+}
+
+def main4 () {
+	local a = 1, b = 0;
+	if a > 0  || b < 0 then ret 0; else ret 1;
+}
+
+def main5 () {
+	local a = 1, b = 0;
+	if !a || !b then ret 0; else ret 1;
+}

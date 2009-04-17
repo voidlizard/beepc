@@ -1,0 +1,18 @@
+
+
+
+def main()
+{
+	local a = 1 :: 2 :: 3 :: 4 :: [];
+
+	local n = [];
+
+	#local a1 = nil(a);
+	#local a2 = nil(n);
+
+	debug_dump();
+	
+
+}
+
+

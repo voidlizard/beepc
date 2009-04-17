@@ -1,0 +1,22 @@
+
+def parse(s)
+{
+	local i = 0, end = 0;
+	local l = [];
+	while i < end
+	{
+		local ss = strsub(s, i, 2);
+		if streq(ss ,"SS") then  l = ss :: l;
+		elif streq(ss ,"QQ") then  l = ss :: l;
+		i = i + 1;
+	}
+	ret l;
+}
+
+
+def main()
+{
+	parse("AAA,BB,CC,DD,EE,FF#");
+	debug_dump_mem();
+}
+

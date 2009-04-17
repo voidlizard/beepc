@@ -1,0 +1,13 @@
+
+
+def proc()
+{
+	local z;
+	ret z;
+}
+
+def proc2()
+{
+	ret 1 + proc();
+}
+

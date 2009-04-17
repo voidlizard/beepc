@@ -1,0 +1,9 @@
+
+def main()
+{
+	local a,b;
+	a = 1;
+	b = "SS";
+	a = b;
+}
+

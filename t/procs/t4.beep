@@ -1,0 +1,15 @@
+
+def proc1 (arg1) {
+	local a = 0;
+	if a != 0 then 
+	{
+		local b = arg1;
+	}
+	else { local d = 2; }
+	ret a;
+}
+
+def main () {
+	local d = proc1(1);
+}
+

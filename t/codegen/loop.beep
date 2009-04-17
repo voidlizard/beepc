@@ -1,0 +1,38 @@
+
+def do_some_strange_things(k)
+{
+	local i = 0;
+	while i < k {
+		putc('.');
+		i = i + 1;
+	}
+}
+
+
+def do_loop(x,y,z)
+{
+	local i = 0;
+	putc(66);
+}
+
+def do_empty_call()
+{
+	local i = 0;
+	while i < 10 {
+		if i == 5 then break;
+		putc('0'+i);
+		putc(':');
+		do_some_strange_things(i);
+		putc('\n');
+		i = i + 1;
+	}
+}
+
+def main()
+{
+	putc('S');
+	putc('\n');
+	do_empty_call();
+	debug_dump();
+}
+

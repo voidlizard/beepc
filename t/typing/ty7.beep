@@ -1,0 +1,6 @@
+
+def proc(x)
+{
+    ret x + 1;
+}
+

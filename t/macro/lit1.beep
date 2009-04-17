@@ -1,0 +1,8 @@
+@literal JOPA 22;
+
+
+def main()
+{
+	local a = `JOPA;
+}
+

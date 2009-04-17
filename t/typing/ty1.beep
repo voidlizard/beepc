@@ -1,0 +1,22 @@
+
+def proc1(a, b)
+{
+}
+
+def proc2()
+{
+    ret 1;
+}
+
+def proc3(y)
+{
+    ret y;
+}
+
+def main(q)
+{
+	local a = 1, b = proc2();
+    local c = "JOPA";
+    local e = proc3(1 + c);
+}
+

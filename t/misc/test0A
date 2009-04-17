@@ -1,0 +1,9 @@
+
+def main () {
+	local s;
+	s = read_gps();
+	if( s == "GGA," ) 
+	then puts("QQ");
+	else puts("FAFA");
+}
+

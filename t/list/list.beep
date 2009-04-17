@@ -1,0 +1,14 @@
+
+
+def main()
+{
+    local i1 = 1;
+    local i2 = 2;
+    local b =  5 :: 6 :: [];
+    local a =  1 :: b;
+    local e = i1 + i2 :: b;
+    local c = "AAA" :: "BBB" :: [];
+    local zu = (1 :: []) :: [];
+    local mu = ("JOPA", 1) :: [];
+}
+

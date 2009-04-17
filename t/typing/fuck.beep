@@ -1,0 +1,33 @@
+
+def proc1(ax, bx) {
+    local z = 10;
+    ret ax*bx + z;
+}
+
+def proc2(a) {
+    ret a+150;
+}
+
+def proc3(x) {
+    ret x*3;
+}
+
+def proc4(y) {
+    ret y*y;
+}
+
+def proc5(a,b,c)
+{
+	if a > 1 then {
+		local d = 1;
+	} else {
+		local d = 2; 
+	}
+	ret proc1(c,b);
+}
+
+def main() {
+    local goo = 20, moo;
+    b = proc1(proc3(a+1+proc4(20)), proc2(20));
+}
+

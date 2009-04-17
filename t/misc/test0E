@@ -1,0 +1,31 @@
+import qqq;
+
+
+def main () {
+	if 1 then ret 2;
+	if 1 then { ret 2; }
+	if 1 then { if 2 then 3; }
+
+	if 1   then 3;
+	elif 2 then 6; 
+	elif 7 then 1;
+	else 22;
+}
+
+def main2 (a,b) {
+	local x;
+	local x1, y1;
+	local z = 1, y = 2, zz = x + x1 + main();
+	local q = 22 + z;
+}
+
+def main4 (a, b) {
+	local i  = a;
+	while i > 0 {
+		local j = i;
+		putstr("A" + str(a));
+		if i > 20 then break;
+		i = i + 1;
+	}
+}
+

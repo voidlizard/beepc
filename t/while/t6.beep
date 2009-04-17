@@ -1,0 +1,7 @@
+
+def main () {
+	local a = 0;
+    continue;
+}
+
+

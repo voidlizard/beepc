@@ -1,0 +1,14 @@
+
+def main()
+{
+	local nmea = "$GPGGA,080527.944,8960.0000,N,00000.0000,E,0,0,,137.0,M,13.0,M,,*40";
+	if  startswith("JOPA", "JOP") then putsn("JOPA ~ JOP");
+	if !startswith("JOPA", "QQ") then putsn("JOPA ! QQ");
+	if !startswith("JOP", "JOPA") then putsn("JOP !~ JOPA");
+	if !startswith("", "Q") then putsn("\"\" !~ Q ");
+	if  startswith(strdup("JOPA"), "JOP") then putsn("mem(JOPA) ~ JOP ");
+	if  startswith(strdup("JOPA"), strdup("JOP")) then putsn("mem(JOPA) ~ mem(JOP) ");
+	if !startswith(strdup(""), strdup("JOP")) then putsn("mem(\"\") !~ mem(JOP) ");
+	if startswith(strdup(nmea), "$GPGGA") then putsn("GGA");
+}
+

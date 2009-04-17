@@ -1,0 +1,19 @@
+import a;
+import c;
+import jopa_kita;
+
+def fun_wo_params {
+}
+
+def fun_w_params (a, b, c) {
+	ret a*b*c;
+}
+
+def qqq (s) {
+	local z = "JOPA" + "QQ"; 
+}
+
+def arr () {
+	local arr = array(40);
+}
+

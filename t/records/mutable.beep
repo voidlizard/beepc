@@ -1,0 +1,12 @@
+
+type mu { mu_one:int, mu_two:string }
+
+def main()
+{
+    local zu = { mu_one=22, mu_two="QQ" of mu };
+    zu.mu_one = 33;
+    putsn(zu.mu_two);
+    zu.mu_two = "GOO";
+    putsn(zu.mu_two);
+}
+

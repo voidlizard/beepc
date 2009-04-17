@@ -1,0 +1,18 @@
+
+def main()
+{
+	local c = 3;
+	local i = 0;
+	while i < 10 {
+		put_int(i);
+		puts(" -> ");
+		if   i == 0 then putsn("0");
+		elif i == 1 then putsn("1");
+		elif i == 2 then { puts("WTF "); if c == 3 then { putsn("2/3");} else {putsn("NOP"); } }
+		elif i == 3 then putsn("3");
+		elif i == 4 then { puts("WTF "); if c != 3 then { putsn("NOP");} else {putsn("4/3"); } }
+		else putsn("oops");
+		i = i + 1;
+	}
+}
+

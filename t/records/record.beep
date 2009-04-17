@@ -1,0 +1,20 @@
+
+record { a_rec of a:int, b:string, c:bool }
+
+def process(x)
+{
+	ret x;
+}
+
+def getsmth()
+{
+	ret 0x22;
+}
+
+def main()
+{
+	local x;
+	local moo = { a_rec of a:x, b:"JOPS", c:false };
+	local foo = process( { a_rec of a:getsmth(), b:"JOPA", c:true } );
+}
+
