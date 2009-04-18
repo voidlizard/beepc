@@ -300,13 +300,11 @@ struct
     let type_replace ctx tp = 
         try List.assoc tp ctx.c_constr with Not_found -> tp
 
-    let func_ret_type ctx ft = 
-        type_replace ctx (Types.func_ret_type ft)
+    let typeof_var ctx v = 
+        try List.assoc v ( ctx.c_constr |> unify Uni_final )
+        with Not_found -> v
 
-    let typeof_type ctx tp = 
-        let var = TVar(Parser_ctx.uniq_id())
-        in let c2 = (var, tp) :: ctx.c_constr |> ctx.c_unify
-        in List.assoc var c2
+    let func_ret_type ctx ft = type_replace ctx (Types.func_ret_type (type_replace ctx ft))
 
     let is_function = function
         | TFunEmit _ | TFunNative _ | TFun _ -> true
@@ -325,7 +323,7 @@ struct
             | EBoolBin _             -> TBool
             | ECmp _                 -> TBool
             | EIdent(n,c)            -> typeof_name (n, id_of c) ctx
-            | ECall((e,args),c)      -> let ft = typeof_expr' e ctx
+            | ECall((e,args),c)      -> let ft = type_replace ctx (typeof_expr' e ctx)
                                         in let _ = assert (is_function ft)
                                         in let fc = fun_constr ctx ft args
                                         in let fany = TAny(Parser_ctx.uniq_id())
@@ -345,11 +343,14 @@ struct
             | EQuot _                -> assert false
     in let tp = typeof_expr' e ctx
     in unwrap_type tp ctx.c_ast
-    and fun_constr ctx tp args = 
-        let types = match tp with
-          TFunNative(_,a,_) | TFunEmit(_,a,_,_) | TFun(a,_) -> a
-          | _ -> raise Undefined_fun_call 
-        in List.map2 ( fun a b -> (a, typeof_expr b ctx) ) types args
+    and fun_constr ctx tp args = match tp with
+      | TFunNative(_,a,_) 
+      | TFunEmit(_,a,_,_) 
+      | TFun(a,_) -> List.map2 ( fun x y -> (x, typeof_expr y ctx) ) a args
+      | _ -> []
+
+    let typeof_expr_final e ctx  = 
+        type_replace ctx (typeof_expr e ctx)
 
     let constr_of_rec e ctx =
         let ff  = function ERecord((n,l),_) -> l | _ -> assert false
@@ -723,9 +724,9 @@ struct
             | _         -> failwith (sprintf "THIS OPERATION IS UNSUPPORTED YET FOR: (%s#%d) %s" n id (str_of_tp tp))
 
         and fun_call e =
-            let (rt,callt) = match e with   EVoid(ECall((f,a),c))   -> let tp = typeof_expr f ctx
+            let (rt,callt) = match e with   EVoid(ECall((f,a),c))   -> let tp = typeof_expr_final f ctx
                                                                        in (TVoidCast(func_ret_type ctx tp), tp)
-                                            | ECall((f,a),c)        -> let tp = typeof_expr f ctx
+                                            | ECall((f,a),c)        -> let tp = typeof_expr_final f ctx
                                                                        in (func_ret_type ctx tp, tp)
                                             | _                     -> assert false
             in let _ = assert (is_function callt)

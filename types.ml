@@ -21,7 +21,7 @@ type beep_type = TModule | TVoid | TVoidCast of beep_type | TInt | TString | TBo
 
 type unify_errors = Circular | Unsolvable of beep_type * beep_type | Unsupported of beep_type 
 
-exception Invalid_type
+exception Invalid_type of beep_type
 exception Unify_error of unify_errors
 
 let raise_circular ()   = raise ( Unify_error(Circular))
@@ -59,7 +59,7 @@ let func_arity = function
 
 let func_ret_type = function
     | TFun(_,r) | TFunNative(_,_,r) | TFunEmit(_,_,r,_) -> r
-    | x                                                 -> raise Invalid_type 
+    | x                                                 -> raise (Invalid_type(x))
 
 let rec_fields_num = function TRecord(f) -> List.length f | _ -> assert false
 
