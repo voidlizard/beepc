@@ -228,6 +228,7 @@ typespec:  TYPE_VOID      { TVoid   }
          | LPAREN typespec COMMA typespec RPAREN { TPair($2, $4) }
          | LSBRAC typespec RSBRAC { TList($2) }
          | LVECT  typespec RVECT  { TVect($2) }
+         | TYPE_FUN LPAREN typelist RPAREN COLON typespec  { TFun($3, $6) }
 
 typelist:                            { TVoid :: [] }
          | typespec                  { $1 :: [] }

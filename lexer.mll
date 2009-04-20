@@ -80,7 +80,7 @@ rule token = parse
 	| "string"        { TYPE_STR }
 	| "bool"          { TYPE_BOOL }
     | "type"          { TYPE }
-    | "of"            { OF }
+    | "fun"           { TYPE_FUN }
 	| ident           { IDENT (lexeme lexbuf) }
 	| decimal         { INT (int_of_string(lexeme lexbuf)) }
 	| hexadecimal     { INT (int_of_string(lexeme lexbuf)) }
