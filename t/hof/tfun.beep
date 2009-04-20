@@ -1,0 +1,16 @@
+
+def sum2(a,b)
+{
+    ret a+b;
+}
+
+def hof( f : fun(int,int):int )
+{
+    ret f(2,2);
+}
+
+def main()
+{
+    hof( sum2 );
+}
+

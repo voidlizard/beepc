@@ -1,0 +1,26 @@
+
+type moo {
+    moo_method1 : fun(int):int,
+    moo_method2 : fun(string):[string]
+}
+
+def do_something(a)
+{
+    ret a+1;
+}
+
+def do_something_else(k)
+{
+    ret "AAA"::"BBB"::[];
+}
+
+
+def main()
+{
+    local m = { moo:
+                    moo_method1 = do_something,
+                    moo_method2 = do_something_else
+              };
+    m.moo_method1(33);
+}
+
