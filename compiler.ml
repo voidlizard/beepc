@@ -266,8 +266,10 @@ struct
 
     let print_constr = List.iter (fun (a,b) -> printf "CONSTR: %s <-> %s\n" (str_of_tp a) (str_of_tp b))
 
+    let unify_no_unwrap constr = List.unique constr |> Types.unify
+
     let unify uni_stage constr =
-        let uni constr = List.unique constr |> Types.unify
+        let uni constr = constr |> unify_no_unwrap
         in try uni constr
            with Unify_error(e) -> if uni_stage = Uni_final
                                   then raise_type_error(e)
@@ -304,7 +306,7 @@ struct
         try List.assoc v ( ctx.c_constr |> unify Uni_final )
         with Not_found -> v
 
-    let func_ret_type ctx ft = type_replace ctx (Types.func_ret_type (type_replace ctx ft))
+    let func_ret_type ctx ft = unwrap_type (type_replace ctx (Types.func_ret_type (type_replace ctx ft))) ctx.c_ast
 
     let is_function = function
         | TFunEmit _ | TFunNative _ | TFun _ -> true
@@ -327,7 +329,8 @@ struct
                                         in let _ = assert (is_function ft)
                                         in let fc = fun_constr ctx ft args
                                         in let fany = TAny(Parser_ctx.uniq_id())
-                                        in let cc = ( (fany, ft) :: ctx.c_constr @ fc) |> unify Uni_final (* TODO - do smth with it *)
+                                        in let zz = ( (fany, ft) :: ctx.c_constr @ fc) 
+                                        in let cc = zz |> unify Uni_final (* TODO - do smth with it *)
                                         in let fc2 = List.assoc fany cc |> func_ret_type ctx (* TODO: bad smell here *)
                                         in let prepl = poly_replaces fc2
                                         in let callt = t_repl prepl fc2
@@ -346,7 +349,7 @@ struct
     and fun_constr ctx tp args = match tp with
       | TFunNative(_,a,_) 
       | TFunEmit(_,a,_,_) 
-      | TFun(a,_) -> List.map2 ( fun x y -> (x, typeof_expr y ctx) ) a args
+      | TFun(a,_) -> List.map2 ( fun x y -> ((unwrap_type x ctx.c_ast), typeof_expr y ctx) ) a args
       | _ -> []
 
     let typeof_expr_final e ctx  = 
@@ -950,6 +953,35 @@ struct
             | _             -> assert false
         in Module({mod_defs=with_funcs exp_macro_fun defs},c)
 
+    let expand_typenames ast =
+        let unwrap = with_atom_type (function x -> unwrap_type x ast)
+        in let rec exp_tn_stmt stmt = match stmt with
+        | StArg((n,t),c)   -> StArg((n, unwrap t),c)
+        | StLocal((n,t),c) -> StLocal((n, unwrap t),c)
+        | StIf({if_then=s1;if_elif=s2;if_else=s3},c)-> let c1 = exp_tn_stmt s1
+                                                       in let c2 = List.map exp_tn_stmt s2
+                                                       in let c3 = exp_tn_stmt s3
+                                                       in StIf({if_then=c1;if_elif=c2;if_else=c3},c)
+        | StBranchElse(Block({blk_code=code},c1),c) -> StBranchElse(Block({blk_code=List.map exp_tn_stmt code},c1),c)
+        | StWhile((e,Block({blk_code=code},c1)),c)  -> StWhile((e, Block({blk_code=List.map exp_tn_stmt code},c1) ),c)
+        | StBranch((e,Block({blk_code=code},c1)),c) -> StBranch((e, Block({blk_code=List.map exp_tn_stmt code},c1)),c) 
+        | StEmpty _         
+        | StBreak _ 
+        | StEmit _
+        | StRet _
+        | StAssign _
+        | StCall _
+        | StContinue _  -> stmt
+        in let exp_tn_code (Block({blk_code=code},c)) = 
+           Block({blk_code=List.map exp_tn_stmt code},c)
+        in let exp_tn (Module({mod_defs=defs},c)) = 
+            let exp_typename_fun fn = match fn with 
+                | FuncDef(fp,c) -> FuncDef({fp with func_type = unwrap fp.func_type;
+                                                    func_code = exp_tn_code fp.func_code} ,c)
+                | _             -> assert false
+            in Module({mod_defs=with_funcs exp_typename_fun defs},c)
+        in exp_tn ast
+
     let expand_types ast = 
         let mk x = match x with TypeDef((name,tp),_)  ->  ( TTypename(name), tp)
                                 | _ -> assert false
@@ -987,9 +1019,10 @@ struct
 
     let compile_ast ?fname:(fn=None) ?fstubs:(stubs=None) ast' =
         let () = print_endline "Compile AST"
-        in let ast1 = with_builtins ast' |> expand_types 
+        in let ast1 = with_builtins ast' |> expand_types
         in let t0 = Unix.gettimeofday()
-        in let ast = ast1 |> expand_macros 
+        in let ast = ast1 |> expand_macros |> expand_typenames
+(*         in let _ = print_funcs ast *)
         in let _ = printf "MACRO: %f\n" (Unix.gettimeofday() -. t0)
 (*         in let _  = print_funcs ast  *)
         in let initial = globals ast
