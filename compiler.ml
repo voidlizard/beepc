@@ -329,8 +329,7 @@ struct
                                         in let _ = assert (is_function ft)
                                         in let fc = fun_constr ctx ft args
                                         in let fany = TAny(Parser_ctx.uniq_id())
-                                        in let zz = ( (fany, ft) :: ctx.c_constr @ fc) 
-                                        in let cc = zz |> unify Uni_final (* TODO - do smth with it *)
+                                        in let cc = ( (fany, ft) :: ctx.c_constr @ fc) |> unify Uni_final
                                         in let fc2 = List.assoc fany cc |> func_ret_type ctx (* TODO: bad smell here *)
                                         in let prepl = poly_replaces fc2
                                         in let callt = t_repl prepl fc2
