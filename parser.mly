@@ -237,7 +237,8 @@ typelist:                            { TVoid :: [] }
 macro: AT macro_code SEMICOLON               { $2 }
 
 macro_code:
-        EXTERN INT IDENT LPAREN typelist RPAREN COLON typespec { ast_macro_extern  ($3, TFunNative($2, (unvoid $5), $8)) }
+        EXTERN INT IDENT LPAREN typelist RPAREN COLON typespec { ast_macro_extern  ($3, TFunNative(Some($2), (unvoid $5), $8)) }
+      | EXTERN IDENT LPAREN typelist RPAREN COLON typespec     { ast_macro_extern  ($2, TFunNative(None, (unvoid $4), $7)) }
       | LITERAL IDENT literal                                  { ast_macro_literal ($2,$3) }
 
 quot: QUOT IDENT                                               { ast_quotation $2 }

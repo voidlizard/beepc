@@ -14,7 +14,7 @@ type beep_type = TModule | TVoid | TVoidCast of beep_type | TInt | TString | TBo
                          | TVar of int
                          | TAny of int
                          | TRecord of (string  * beep_type) list
-                         | TFunNative of int * beep_type list * beep_type
+                         | TFunNative of int option * beep_type list * beep_type
                          | TFunEmit of string * beep_type list * beep_type * Opcodes.opcode list
                          | TTypename of string
                          | TTypedef  of beep_type
@@ -45,7 +45,8 @@ let str_of_tp x =
         | TVect(a)          -> sprintf "vect<%s>" (s_atom a)
         | TFun(a,r)         -> sprintf "fun(%s):%s" (String.concat "," (List.map s_atom a)) (s_atom r)
         | TRecField(t,n)    -> sprintf "field (%s) (%s)" (s_atom t) n
-        | TFunNative(n,a,r) -> sprintf "native fun_%d (%s):%s" n (String.concat "," (List.map s_atom a)) (s_atom r)
+        | TFunNative(Some(n),a,r) -> sprintf "native fun_%d (%s):%s" n (String.concat "," (List.map s_atom a)) (s_atom r)
+        | TFunNative(None,a,r) -> sprintf "native fun_UNKNOWN (%s):%s" (String.concat "," (List.map s_atom a)) (s_atom r)
         | TModule           -> "module" 
         | TFunEmit(n,a,r,_) -> sprintf "fun emit %s (%s):%s" n (String.concat "," (List.map s_atom a)) (s_atom r)
         | TTypename(s)      -> sprintf "typename<%s>" s

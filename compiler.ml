@@ -26,8 +26,9 @@ struct
     exception No_field of beep_type * name
     exception Not_func_apply
     exception Type_error of string
-
-    type compiler_err_type = SyntaxError | NameError of name | TypeError of string | OtherError of string
+    
+    type compiler_err_type = SyntaxError | NameError of name | TypeError of string |
+                             NameHideError of string * string | OtherError of string
     type compiler_error_ctx = { 
                                 comp_err_fname: string option;
                                 comp_err_lnum: int 
@@ -35,16 +36,19 @@ struct
 
     exception CompilerError of compiler_err_type * compiler_error_ctx
 
-    let raise_compiler_error x stmt = 
-        let ctx = context_of_stmt stmt 
-        in let ln = ctx.Parser_ctx.pos.Lexing.pos_lnum
+    let err_context ctx = 
+        let ln = ctx.Parser_ctx.pos.Lexing.pos_lnum
         in let fn = ctx.Parser_ctx.pos.Lexing.pos_fname
-        in let c = {comp_err_fname=Some(fn);comp_err_lnum=ln}
+        in {comp_err_fname=Some(fn);comp_err_lnum=ln}
+
+    let raise_compiler_error x stmt = 
+        let c = context_of_stmt stmt |> err_context 
         in match x with
         | Type_error(s)   -> raise (CompilerError(TypeError(s), c))
         | Not_resolved(s) -> raise (CompilerError(NameError(s), c))
         | x               -> raise x
 (*         | _               -> raise (CompilerError(OtherError("Unknown"), c)) *)
+
 
     let raise_parse_error lex  =
         let _ = printf "parse error\n" in
@@ -156,7 +160,7 @@ struct
         in let folder_globs a b = match b with
             | FuncDef _        -> let fp = func_props b
                                   in (fp.func_name, var (fp.func_name, repl fp.func_type)) :: a
-            | ExternFunc((n,t)) -> (n, var (n, repl t) ) :: a
+            | ExternFunc((n,t),_) -> (n, var (n, repl t) ) :: a
             | TypeDef((n,TRecord(t)),_)  ->  let trec = repl (TRecord(t))
                                              in (n, var (n, TTypedef(trec) )) :: add_fields n (TRecord(t)) @ a 
             | TypeDef((n,t),_)  -> (n, var (n, TTypedef(repl t) )) :: a
@@ -675,8 +679,8 @@ struct
             let nf = try List.find (fun (_, n, f) -> if n = name then true else false ) (Beepvm_builtins.builtins())
                      with Not_found -> raise (Not_resolved name)
             in match nf with 
-               (_, _, TFunNative(x, [TString;TString], TBool)) -> op (NCALL x) ~comment:name :: []
-               |(_, _, x)                                      -> raise (Invalid_operation_type x)
+               (_, _, TFunNative(Some(x), [TString;TString], TBool)) -> op (NCALL x) ~comment:name :: []
+               |(_, _, x)                                            -> raise (Invalid_operation_type x)
 
         and get_var ct (n,id) = 
             try List.assoc n (List.flatten ct.gen_vars)
@@ -722,7 +726,7 @@ struct
             in match tp with
             | TFunEmit(_,a,r,_)
             | TFun(a,r) -> [(op (ADDROF (offset())) ~comment:(sprintf "func %s" n)) ]
-            | TFunNative(num,a,r) -> [(op (LIT num) ~comment:(sprintf "%s %s" n (str_of_tp tp) )) ]
+            | TFunNative(Some(num),a,r) -> [(op (LIT num) ~comment:(sprintf "%s %s" n (str_of_tp tp) )) ]
             | _         -> failwith (sprintf "THIS OPERATION IS UNSUPPORTED YET FOR: (%s#%d) %s" n id (str_of_tp tp))
 
         and fun_call e =
@@ -895,7 +899,7 @@ struct
         | _ -> assert false
 
     let with_builtins = function Module(p,c) ->
-        let bu = builtins () |> List.map (function   (_,n,TFunNative(num,a,r)) -> ExternFunc((n, TFunNative(num,a,r)  ))
+        let bu = builtins () |> List.map (function   (_,n,TFunNative(num,a,r)) -> ExternFunc((n, TFunNative(num,a,r)), c)
                                                    | (_,n,TFunEmit(nm,a,r,code)) -> emit_func_def (TFunEmit(nm,a,r,code)) c
                                                    | _ -> assert false )
         in Module({mod_defs = bu @ p.mod_defs},c)
@@ -992,12 +996,44 @@ struct
 
         in let rewrite_types = function   FuncDef(fp,c)    -> FuncDef({ fp with func_type = tr fp.func_type } ,c) 
                                         | TypeDef((n,t),c) -> TypeDef((n, tr t),c)
-                                        | ExternFunc(n,t)  -> ExternFunc(n, tr t)
+                                        | ExternFunc((n,t),c)  -> ExternFunc((n, tr t),c)
                                         | MacroDef(x,c)    -> MacroDef(x,c)
 
         in let defs = mod_defs ast |> List.map rewrite_types
         in let update  = function Module({mod_defs=d},c) -> Module({mod_defs=defs},c)
         in update ast
+
+    let normalize_ext_funcs (Module({mod_defs=defs},c)) = 
+        let (others, ext_funcs) = List.partition (function ExternFunc _ -> false | _ -> true) defs
+        in let normalized v = 
+            let cmp a b = match a,b with
+            | ExternFunc((n,TFunNative(Some(x),_,_)),_), ExternFunc((n',TFunNative(Some(x'),_,_)),_) -> compare x x'
+            | ExternFunc((n,TFunNative(None,_,_)),_), ExternFunc((n',TFunNative(Some(x'),_,_)),_) -> 1
+            | ExternFunc((n',TFunNative(Some(x'),_,_)),_), ExternFunc((n,TFunNative(None,_,_)),_) -> (-1)
+            | ExternFunc((n,TFunNative(None,_,_)),_), ExternFunc((n',TFunNative(None,_,_)),_)     -> 0
+            | _ -> assert false
+            in let sorted = List.sort ~cmp:cmp v
+            in let rec process n l = match l with
+            | ExternFunc((nm, TFunNative(Some(x), x1, x2)),c) :: xs -> ExternFunc((nm, TFunNative(Some(x),  x1, x2)),c) :: process x xs
+            | ExternFunc((nm, TFunNative(None, x1, x2)),c)    :: xs -> ExternFunc((nm, TFunNative(Some(n+1), x1, x2)),c) :: process (n+1) xs
+            | z :: xs                                           -> assert false
+            | []                                                -> []
+            in let validate x = 
+                let rec validate_rec dict rest = 
+                match rest with 
+                | ExternFunc((nm, TFunNative(Some(x), x1, x2)),c) :: xs -> let _ = happened dict x nm c 
+                                                                          in validate_rec ((x, (nm,c)) :: dict) xs
+                | x :: xs                                               -> assert false
+                | []                                                    -> x
+                and happened dict v nm c = 
+                    let e = try Some(List.assoc v dict) with Not_found -> None
+                    in match e with
+                    | Some((nm',_)) -> raise (CompilerError(NameHideError(nm, nm'), err_context c))
+                    | _            -> ()
+                in validate_rec [] x
+            in sorted |> process 0 |> validate
+        in let defs' = others @ normalized ext_funcs
+        in Module({mod_defs=defs'},c)
 
     let filename = function None -> "a.out" | Some(x) -> x
 
@@ -1005,7 +1041,7 @@ struct
         let gen_stubs stubs_name = 
             let stubs = stubs_create stubs_name
             in let fld acc = function TypeDef((name,TRecord(fields)),_) -> (name, TRecord(fields)) :: acc | _ -> acc
-            in let flde acc = function ExternFunc((name,TFunNative(n,a,r))) -> (name,TFunNative(n,a,r)) :: acc | _ -> acc
+            in let flde acc = function ExternFunc((name,TFunNative(n,a,r)),_) -> (name,TFunNative(n,a,r)) :: acc | _ -> acc
             in let fld_rec stb = function (name, TRecord(fields)) -> stubs_record_header name fields stb | _  -> stb
             in let fld_ext stb = function (name, TFunNative(n,a,r)) -> stubs_builtin (name, TFunNative(n,a,r)) stb | _  -> stb
             in let recs = ctx.c_ast |> mod_typedefs  |> List.fold_left fld  []
@@ -1020,7 +1056,7 @@ struct
         let () = print_endline "Compile AST"
         in let ast1 = with_builtins ast' |> expand_types
         in let t0 = Unix.gettimeofday()
-        in let ast = ast1 |> expand_macros |> expand_typenames
+        in let ast = ast1 |> expand_macros |> expand_typenames |> normalize_ext_funcs
 (*         in let _ = print_funcs ast *)
         in let _ = printf "MACRO: %f\n" (Unix.gettimeofday() -. t0)
 (*         in let _  = print_funcs ast  *)

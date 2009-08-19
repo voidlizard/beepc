@@ -13,7 +13,7 @@ type name  = string
 type ast_top    = Module of mod_props * parser_ctx 
  and block      = Block of blk_props * parser_ctx
  and definition =   FuncDef of func_props * parser_ctx
-                  | ExternFunc of (name * beep_type) 
+                  | ExternFunc of (name * beep_type) * parser_ctx 
                   | TypeDef of (name * beep_type) * parser_ctx
                   | MacroDef of macro * parser_ctx
  and statement  = | StEmpty of parser_ctx
@@ -145,7 +145,7 @@ let unvoid tl = List.fold_left (fun acc x -> match x with TVoid -> acc | _ -> ac
 
 let ast_macro_extern (name, tp) ast = 
 (*     let _ = printf "MACRO EXTERN: %s -> %s\n" name (str_of_tp tp) in *)
-    (function Module({mod_defs=defs},c) -> Module({mod_defs=ExternFunc((name,tp)) :: defs },c) ) ast
+    (function Module({mod_defs=defs},c) -> Module({mod_defs=ExternFunc((name,tp),ctx()) :: defs },c) ) ast
 
 let ast_macro_literal (name,expr) = 
     let _ = printf "MACRO LITERAL: %s\n" name in

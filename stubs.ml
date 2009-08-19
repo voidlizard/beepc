@@ -42,8 +42,8 @@ let stubs_gen_builtins acc =
     | ((_,Types.TFunNative(n1,_,_)),(_,Types.TFunNative(n2,_,_))) -> compare n2 n1
     | _ -> assert false
     in let sorted = List.sort ~cmp:cmp acc.stubs_builtins
-    in let bdict = List.map (function (name,Types.TFunNative(num,_,_)) -> (num, name) | _ -> assert false ) sorted
-    in let bnum = 1 + (function (_, Types.TFunNative(n,_,_)) -> n | _ -> assert false)(List.hd sorted)
+    in let bdict = List.map (function (name,Types.TFunNative(Some(num),_,_)) -> (num, name) | _ -> assert false ) sorted
+    in let bnum = 1 + (function (_, Types.TFunNative(Some(n),_,_)) -> n | _ -> assert false)(List.hd sorted)
     in let en = Enum.init bnum ( fun i -> try beepvm_prefix i (List.assoc i bdict) 
                                           with  Not_found -> beepvm_prefix i "nothing" ) 
                 |> List.of_enum |> String.concat ",\n"
