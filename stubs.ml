@@ -27,7 +27,7 @@ let stubs_record_header name fields acc = { acc with stubs_lines = acc.stubs_lin
                                                                   :: sprintf "uint16_t %s_fields[%d];" name (List.length fields)
                                                                   :: sprintf "struct {"
                                                                   :: stubs_record_fields fields
-                                                                   @ sprintf "};"
+                                                                   @ sprintf "} o;"
                                                                   :: sprintf "} beep_%s_t;" name
                                                                   :: sprintf "#define DEF_%s 1" name
                                                                   :: "" 
