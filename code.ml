@@ -88,11 +88,12 @@ let binary code =
 
 (*             in let _ = dump_code_lines code *)
         (*     in let () = List.iter (fun x -> printf "%04X : %04X\n" (fst x) (snd x) ) offs  *)
-            in let bincode = List.fold_left (fun acc c -> acc @ bin c ) [] code
+            in let bincode = List.fold_left (fun acc c -> acc @ bin c ) [] code |> 
+                            (function x -> if (List.length x) mod 2 == 0 then x else x @ [getcode NOP] )
             in let lookup c  = match c with
             | { line_id=None }    -> 0xFFFF
             | { line_id=Some(x) } -> try List.assoc x offs with Not_found -> 0xFFFF
-            in let bincode2 = List.map (fun c -> ((c, lookup c), bin c)) code
+(*            in let bincode2 = List.map (fun c -> ((c, lookup c), bin c)) code*)
             in let hex l = String.concat " " (List.map (fun x -> sprintf "%02X" x) l)
 
 (*
