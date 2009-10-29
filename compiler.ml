@@ -22,13 +22,14 @@ struct
     exception Not_resolved  of name
     exception Undefined_type of name
     exception Undefined_fun_call
+    exception Bad_arg_num
     exception Invalid_operation_type of beep_type
     exception No_field of beep_type * name
     exception Not_func_apply
     exception Type_error of string
     
-    type compiler_err_type = SyntaxError | NameError of name | TypeError of string |
-                             NameHideError of string * string | OtherError of string
+    type compiler_err_type = SyntaxError | NameError of name | TypeError of string | ArgNumError
+                             | NameHideError of string * string | OtherError of string
     type compiler_error_ctx = { 
                                 comp_err_fname: string option;
                                 comp_err_lnum: int 
@@ -46,6 +47,7 @@ struct
         in match x with
         | Type_error(s)   -> raise (CompilerError(TypeError(s), c))
         | Not_resolved(s) -> raise (CompilerError(NameError(s), c))
+        | Bad_arg_num     -> raise (CompilerError(ArgNumError, c))
         | x               -> raise x
 
     let raise_compiler_error x stmt =
@@ -61,6 +63,12 @@ struct
         | Circular           -> raise (Type_error("Circular constraint"))
         | Unsolvable(t1,t2)  -> raise (Type_error(sprintf "%s <-> %s" (str_of_tp t1) (str_of_tp t2)))
         | Unsupported(t1)    -> raise (Type_error(sprintf "Unsupported type for operation %s" (str_of_tp t1)))
+
+    let check_name name ctx f =
+        try (f ()) with Not_found -> raise_compiler_error_with (Not_resolved(name)) ctx
+
+    let check_args ctx f =
+        try (f ()) with List.Different_list_size(n) -> raise_compiler_error_with Bad_arg_num ctx
 
     let map_funcs f ast = mod_funcs ast |> f
 
@@ -263,10 +271,6 @@ struct
         in let _  = fold_funcs f init ast
         in resolved |> Hashtbl.of_enum
 
-    let constrs_of_apply args x = 
-        let args2 = (function TFun(a,_) | TFunNative(_,a,_) | TFunEmit(_,a,_,_) -> a | _ -> raise Not_func_apply )(x) 
-        in List.map2 ( fun a b -> (a,b) ) args2 args 
-
     type uni_stage = Uni_interim | Uni_final
 
     let print_constr = List.iter (fun (a,b) -> printf "CONSTR: %s <-> %s\n" (str_of_tp a) (str_of_tp b))
@@ -332,7 +336,7 @@ struct
             | EIdent(n,c)            -> typeof_name (n, id_of c) ctx
             | ECall((e,args),c)      -> let ft = type_replace ctx (typeof_expr' e ctx)
                                         in let _ = assert (is_function ft)
-                                        in let fc = fun_constr ctx ft args
+                                        in let fc = check_args c (fun () -> fun_constr ctx ft args)
                                         in let fany = TAny(Parser_ctx.uniq_id())
                                         in let cc = ( (fany, ft) :: ctx.c_constr @ fc) |> unify Uni_final
                                         in let fc2 = List.assoc fany cc |> func_ret_type ctx (* TODO: bad smell here *)
@@ -389,7 +393,8 @@ struct
         | EList((h,t),_)           -> (TList(typeof_expr h ctx), typeof_expr t ctx) :: s
         | ECall((e,args),c)        -> let fn = typeof_expr e ctx
                                       in let dict = fn |> poly_replaces 
-                                      in let x = try  fun_constr ctx fn args @ s |> List.map ( fun (a,b) -> (t_repl dict a, t_repl dict b) )
+                                      in let x = try  check_args c (fun () -> fun_constr ctx fn args @ s)
+                                                      |> List.map ( fun (a,b) -> (t_repl dict a, t_repl dict b) )
                                                  with Undefined_fun_call -> []
                                       in x
         | ERecord((n,l),c)         -> (constr_of_rec (ERecord((n,l),c)) ctx) @ s
@@ -909,9 +914,6 @@ struct
         | (FuncDef(fp,c))::ds -> (f (FuncDef(fp,c))) :: (with_funcs f ds)
         | d::ds               -> d :: (with_funcs f ds)
         | []                  -> []
-
-    let check_name name ctx f =
-        try (f ()) with Not_found -> raise_compiler_error_with (Not_resolved(name)) ctx
 
     let expand_macros (Module({mod_defs=defs},c)) = 
         let ql = List.map (function MacroDef(MacroLiteral(name,e),c) -> (name,e)::[] | _ -> [])
