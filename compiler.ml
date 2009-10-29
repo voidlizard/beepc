@@ -48,6 +48,7 @@ struct
         | Type_error(s)   -> raise (CompilerError(TypeError(s), c))
         | Not_resolved(s) -> raise (CompilerError(NameError(s), c))
         | Bad_arg_num     -> raise (CompilerError(ArgNumError, c))
+        | Invalid_operation_type(t) -> raise (CompilerError(TypeError(str_of_tp t), c))
         | x               -> raise x
 
     let raise_compiler_error x stmt =
@@ -296,10 +297,6 @@ struct
                 in let _ = Hashtbl.replace ctx.c_nm_cache (n,id) t
                 in t
 
-    let typeof_name_no_uni (n,id) ctx = 
-        let var = Hashtbl.find ctx.c_resolv (n,id)
-        in unwrap_type var.var_type ctx.c_ast
-
     let typeof_field = function TRecField(TRecord(fields),n) -> (try List.assoc n fields
                                                                  with Not_found -> raise (No_field(TRecord(fields),n)) )
                                | x -> assert false 
@@ -405,14 +402,16 @@ struct
 
     let constraints ast ctx = 
         let nctx a = { ctx with c_constr = a }
-        in let code_fold acc code =
+        in let code_fold_unsafe acc code =
             let const = match code with 
             | StAssign(e1,e2,_) -> (typeof_expr e1 (nctx acc), typeof_expr e2 (nctx acc)) :: constr_of_expr e1 (nctx acc) @ constr_of_expr e2 (nctx acc)
             | StWhile((e,_),_)  -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc)
             | StCall(x,_)       -> constr_of_expr x (nctx acc)
-            | StBranch((e,_),_) -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc) @ []
+            | StBranch((e,_),_) -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc)  @ []
             | _ -> []
             in const @ acc |> ctx.c_unify
+        in let code_fold acc code = 
+            try code_fold_unsafe acc code with x -> raise_compiler_error x code
         in let folder (total,a) b =
             let fp = func_props b
             in let ft = unwrap_type fp.func_type ctx.c_ast 
@@ -821,8 +820,12 @@ struct
             | ECmp(Unequal, (l,r), _) 
               when (typeof_expr l ctx = TString && typeof_expr r ctx = TString) -> st @ builtin_by_name "streq" @ [op NOT]
 
-            | ECmp(Equal, (l,r), _)
-            | ECmp(Unequal, (l,r), _) -> raise (Invalid_operation_type (typeof_expr l ctx))
+            | ECmp(Equal, (l,r), c)
+            | ECmp(Unequal, (l,r), c) -> 
+                let _ = print_endline "WTF?" ; 
+                        print_constr ctx.c_constr ;
+                        printf "L VAR: %s\n" (str_of_tp (typeof_expr l ctx))
+                in raise_compiler_error_with (Invalid_operation_type (typeof_expr l ctx)) c
 
             | ECmp(More, _, _)   -> st @ [op GT]
             | ECmp(MoreEq, _, _) -> st @ [op GEQ]
@@ -1068,7 +1071,7 @@ struct
 (*         in let _  = print_funcs ast  *)
         in let initial = globals ast
         in let tbl  = lookup_table ast initial
-(*         in let _ = print_lookup_table tbl *)
+(*        in let _ = print_lookup_table tbl *)
         in let t1 = Unix.gettimeofday()
         in let ctx2 = constraints ast { c_resolv = tbl;
                                         c_glob = initial;
@@ -1079,10 +1082,10 @@ struct
                                       }
 (*        in let _ = printf "CONSTR: %f\n" (Unix.gettimeofday() -. t1)*)
 (*        in let _ = printf "CONSTR LENGTH: %d\n" (List.length ctx2.c_constr)*)
+
 (*        in let _ = print_constr ctx2.c_constr*)
         in let t2 = Unix.gettimeofday()
-(*         in let _ = generate_code ast { ctx2 with c_unify = (fun x -> x) } (filename fn) *)
-        in let _ = generate_code ast { ctx2 with c_unify = (fun x -> x) } (filename fn)
+        in let _ = generate_code ast { ctx2 with c_unify = (fun x -> x); c_nm_cache = Hashtbl.create 2000 } (filename fn) 
         in let _ = printf "GEN: %f\n" (Unix.gettimeofday() -. t2)
         in let _ = generate_stubs stubs ctx2
 
