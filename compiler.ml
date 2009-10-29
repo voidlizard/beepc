@@ -41,14 +41,15 @@ struct
         in let fn = ctx.Parser_ctx.pos.Lexing.pos_fname
         in {comp_err_fname=Some(fn);comp_err_lnum=ln}
 
-    let raise_compiler_error x stmt = 
-        let c = context_of_stmt stmt |> err_context 
+    let raise_compiler_error_with x ste =
+        let c = err_context ste
         in match x with
         | Type_error(s)   -> raise (CompilerError(TypeError(s), c))
         | Not_resolved(s) -> raise (CompilerError(NameError(s), c))
         | x               -> raise x
-(*         | _               -> raise (CompilerError(OtherError("Unknown"), c)) *)
 
+    let raise_compiler_error x stmt =
+        raise_compiler_error_with x (context_of_stmt stmt)
 
     let raise_parse_error lex  =
         let _ = printf "parse error\n" in
@@ -909,6 +910,9 @@ struct
         | d::ds               -> d :: (with_funcs f ds)
         | []                  -> []
 
+    let check_name name ctx f =
+        try (f ()) with Not_found -> raise_compiler_error_with (Not_resolved(name)) ctx
+
     let expand_macros (Module({mod_defs=defs},c)) = 
         let ql = List.map (function MacroDef(MacroLiteral(name,e),c) -> (name,e)::[] | _ -> [])
         in let equots = defs |> ql |> List.fold_left (@) []
@@ -930,7 +934,7 @@ struct
         | ECmp(op, (e1,e2), c )    -> (ECmp(op, (exp_macro_expr e1, exp_macro_expr e2), c ))
         | EBoolBin(op, (e1,e2), c) -> (EBoolBin(op, (exp_macro_expr e1, exp_macro_expr e2), c))
         | EAriphBin(op, (e1,e2),c) -> (EAriphBin(op, (exp_macro_expr e1, exp_macro_expr e2),c))
-        | EQuot(n,c)               -> List.assoc n equots  
+        | EQuot(n,c)               -> check_name n c (fun () -> List.assoc n equots)
 
         in let rec exp_macro_stmt stmt = match stmt with 
         | StArg _                                    
