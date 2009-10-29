@@ -1068,7 +1068,7 @@ struct
 (*         in let _  = print_funcs ast  *)
         in let initial = globals ast
         in let tbl  = lookup_table ast initial
-         in let _ = print_lookup_table tbl 
+(*         in let _ = print_lookup_table tbl *)
         in let t1 = Unix.gettimeofday()
         in let ctx2 = constraints ast { c_resolv = tbl;
                                         c_glob = initial;
