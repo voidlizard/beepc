@@ -148,7 +148,7 @@ let ast_macro_extern (name, tp) ast =
     (function Module({mod_defs=defs},c) -> Module({mod_defs=ExternFunc((name,tp),ctx()) :: defs },c) ) ast
 
 let ast_macro_literal (name,expr) = 
-    let _ = printf "MACRO LITERAL: %s\n" name in
+(*    let _ = printf "MACRO LITERAL: %s\n" name in*)
     (function Module({mod_defs=defs},c) -> Module({mod_defs=MacroDef(MacroLiteral(name,expr),ctx()) :: defs },c) )
 
 let ast_quotation name = EQuot(name, ctx())

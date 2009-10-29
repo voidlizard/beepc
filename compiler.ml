@@ -1,6 +1,6 @@
 module Compiler =  
 struct
-    type compiler_settings = { out_path:string; entry_point:string }
+    type compiler_opts = { comp_verbose: bool; comp_stubs: string option }
 
     open ExtList
     open ExtHashtbl
@@ -55,7 +55,7 @@ struct
         raise_compiler_error_with x (context_of_stmt stmt)
 
     let raise_parse_error lex  =
-        let _ = printf "parse error\n" in
+(*        let _ = printf "parse error\n" in*)
         let ln = lex.Lexing.lex_curr_p.Lexing.pos_lnum
         in let fn = lex.Lexing.lex_curr_p.Lexing.pos_fname
         in raise (CompilerError(SyntaxError, {comp_err_fname=Some(fn); comp_err_lnum=ln}))
@@ -431,7 +431,7 @@ struct
 
     let code_id = let d = ref 0 in function () -> d := 1 + !d ; !d;;
 
-    type gen_ctx = { gen_code: line list;
+    type gen_ctx = { gen_code_chunks: line list list;
                      gen_ct: ctrl list;
                      gen_vars: (name * gen_var) list list;
                      gen_nest: int;
@@ -451,7 +451,7 @@ struct
     and gen_var_spec = GLoc of int  | GArg of int | GGlob of (name * int)
     
     let  ct_init (fn,le)   = {  gen_ct = { loop=None; end_if=None; ctp=None; } :: [];
-                                gen_code = []; 
+                                gen_code_chunks = []; 
                                 gen_vars = [[]];
                                 gen_nest = 0;
                                 gen_func_end = le;
@@ -466,7 +466,7 @@ struct
 
     type branch_t = BrFirst of codeid | BrAny of codeid * codeid  | BrLast of codeid
 
-    let generate_code ast ctx fname = 
+    let generate_code (opts:compiler_opts) ast ctx fname = 
         let dv = datavalues ast ctx |> List.map ( fun x -> (x, code_id ()) )
 
         in let fn_map (_,{var_name=name;var_type=tp}) = ((name,tp),true)
@@ -517,7 +517,7 @@ struct
                 in let vars = if a.gen_nest = b.gen_nest then merge_vars a b else a.gen_vars
                 in let tail = if List.length ct1 < List.length ct2 
                               then tail_code st2 else []
-                in { a with gen_code = b.gen_code @ tail ; 
+                in { a with gen_code_chunks = tail :: b.gen_code_chunks; 
                             gen_vars = vars; 
                             gen_func_locals = b.gen_func_locals;
                    }
@@ -552,7 +552,8 @@ struct
     
         and nest st = { st with gen_nest = st.gen_nest + 1; gen_vars = ([]):: st.gen_vars }
         and new_ct fp = ct_init (fp.func_name, func_end fp)
-        and add_code code ct = match ct with { gen_code=c } -> { ct with gen_code = ct.gen_code @ code }
+        and add_code code ct = { ct with gen_code_chunks = code :: ct.gen_code_chunks }
+(*        and add_code code ct = ct*)
 
         and add_nop ct = ct |> add_code (op NOP :: [])
 
@@ -580,7 +581,7 @@ struct
 
         and push_loop e ct = let (l1,l2) = (code_id(), code_id())
                              in { ct with gen_ct = {(List.hd ct.gen_ct) with loop = Some((l1,l2)); ctp=Some(CLoop)} :: ct.gen_ct;
-                                          gen_code = ct.gen_code @ while_head ct e l1 l2
+                                          gen_code_chunks =  while_head ct e l1 l2 :: ct.gen_code_chunks
                                 }
 
         and push_if ct  = { ct with gen_ct = {(List.hd ct.gen_ct) with end_if = Some(code_id()); ctp=Some(CIf)} :: ct.gen_ct;
@@ -626,6 +627,9 @@ struct
             in let w_id = with_head (fun x -> { x with line_id = Some(fe); comment = sprintf "end of %s" fp.func_name }) 
             in (fe, w_id (stmp @ fs @ ltmp) )
 
+        and gen_code { gen_code_chunks=chunks } = 
+            List.rev chunks |> List.flatten
+
         and gen_wrap_func fp ctx func = match (fp.func_name, fp.func_type) with
             | ("main", _)     -> gen_wrap_func_entry fp ctx func
             | (_, TFun _)     -> gen_wrap_func_plain fp ctx func 
@@ -634,21 +638,21 @@ struct
         and gen_wrap_func_entry fp ctx func  =
             let (id,pro) = gen_prologue fp func
             in let (_,epi) = gen_epilogue fp func
-            in { ctx with c_code = ctx.c_code @ pro @ func.gen_code @ epi @ [op DOWN]; c_entry_point = Some(id) }
+            in { ctx with c_code = ctx.c_code @ pro @ gen_code func @ epi @ [op DOWN]; c_entry_point = Some(id) }
         and gen_wrap_func_plain fp ctx func =
             let (id,pro) = gen_prologue fp func
             in let (_,epi) = gen_epilogue fp func
-            in { ctx with c_code = ctx.c_code @ pro @ func.gen_code @ epi @ [op RET] }
+            in { ctx with c_code = ctx.c_code @ pro @ gen_code func @ epi @ [op RET] }
         and gen_wrap_func_emit fp ctx func = 
             let (fs,_) = try List.assoc (fp.func_name, fp.func_type) func_table 
                          with Not_found -> failwith fp.func_name
             in let mark = with_head (fun x -> {x with line_id = Some(fs); comment=fp.func_name})
-            in { ctx with c_code = ctx.c_code @ (mark func.gen_code) @ [op RET] }
+            in { ctx with c_code = ctx.c_code @ (mark (gen_code func)) @ [op RET] }
         and gen_executable ctx fpath =
             let ep = try entry_point ctx with Not_found -> failwith "No entry point"
             in let code = op (JMP ep) :: op NOP ~comment:"align" :: ctx.c_data @ (optimize ctx.c_code)
-            in let _ = dump_code_lines code
-            in let () = printf "Generated: %d lines OK\n" (List.length ctx.c_code)
+            in let () = if opts.comp_verbose then dump_code_lines code
+            in let () = if opts.comp_verbose then printf "Generated: %d lines OK\n" (List.length ctx.c_code)
             in let codes = binary code |> List.map Char.chr
             in output_file fpath (String.implode codes)
         and tail_code ct = match ct.ctp with
@@ -1061,17 +1065,15 @@ struct
         | None    -> ()
         | Some(x) -> gen_stubs x
 
-    let compile_ast ?fname:(fn=None) ?fstubs:(stubs=None) ast' =
-        let () = print_endline "Compile AST"
+    let compile_ast ?fname:(fn=None) (opts:compiler_opts) ast' =
+        let verbose = opts.comp_verbose
         in let ast1 = with_builtins ast' |> expand_types
         in let t0 = Unix.gettimeofday()
         in let ast = ast1 |> expand_macros |> expand_typenames |> normalize_ext_funcs
-(*         in let _ = print_funcs ast *)
-(*        in let _ = printf "MACRO: %f\n" (Unix.gettimeofday() -. t0)*)
-(*         in let _  = print_funcs ast  *)
+        in let ()  = if verbose then print_funcs ast  
         in let initial = globals ast
         in let tbl  = lookup_table ast initial
-(*        in let _ = print_lookup_table tbl *)
+        in let () = if verbose then print_lookup_table tbl 
         in let t1 = Unix.gettimeofday()
         in let ctx2 = constraints ast { c_resolv = tbl;
                                         c_glob = initial;
@@ -1080,22 +1082,21 @@ struct
                                         c_unify = unify Uni_final;
                                         c_nm_cache = Hashtbl.create 2000;
                                       }
-(*        in let _ = printf "CONSTR: %f\n" (Unix.gettimeofday() -. t1)*)
-(*        in let _ = printf "CONSTR LENGTH: %d\n" (List.length ctx2.c_constr)*)
+        in let () = if verbose then printf "CONSTR: %f\n" (Unix.gettimeofday() -. t1)
+        in let () = if verbose then printf "CONSTR LENGTH: %d\n" (List.length ctx2.c_constr)
 
-(*        in let _ = print_constr ctx2.c_constr*)
         in let t2 = Unix.gettimeofday()
-        in let _ = generate_code ast { ctx2 with c_unify = (fun x -> x); c_nm_cache = Hashtbl.create 2000 } (filename fn) 
-        in let _ = printf "GEN: %f\n" (Unix.gettimeofday() -. t2)
-        in let _ = generate_stubs stubs ctx2
+        in let _ = generate_code opts ast { ctx2 with c_unify = (fun x -> x); c_nm_cache = Hashtbl.create 2000 } (filename fn) 
+        in let () = if verbose then printf "GEN: %f\n" (Unix.gettimeofday() -. t2)
+        in let _ = generate_stubs opts.comp_stubs ctx2
 
       in ()
 
-    let compile_file ?fstubs:(stubs=None) in_f out_f =
+    let compile_file (opts:compiler_opts) in_f out_f =
         let lex = in_f |> input_file |> Message.lexer_from_string ~fn:(Some(in_f))
         in try
             let ast  = Parser.toplevel Lexer.token lex
-            in let _ = compile_ast ~fname:(Some out_f) ~fstubs:stubs ast
+            in let _ = compile_ast opts ~fname:(Some out_f) ast
             in ()
         with Parsing.Parse_error -> raise_parse_error lex 
 

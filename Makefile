@@ -14,8 +14,8 @@ SOURCES =         \
 	code.ml       \
 	parser.mly
 
-OCAMLBUILD=ocamlbuild -ocamlopt 'ocamlopt -p '
-#OCAMLBUILD=ocamlbuild
+#OCAMLBUILD=ocamlbuild -ocamlopt 'ocamlopt -p '
+OCAMLBUILD=ocamlbuild
 CAML2HTML=caml2html
 OCAMLDOC=ocamldoc
 
