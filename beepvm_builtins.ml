@@ -59,6 +59,5 @@ let builtins () = [
 
     builtin ""                "gc"           (TFunEmit("gc",   [],TVoid,[GC]))                      ;
     builtin ""                "gc_cheap"     (TFunEmit("gc_cheap", [],TVoid,[CGC]))                 ;
-    builtin ""                "debug_dump"   (TFunEmit("debug_dump", [],TVoid,[DUMP]))              ;
 ]
 

@@ -79,7 +79,6 @@ type opcode =
     | STORE5
     | STORE6
     | STORE7
-    | DUMP 
     | DOWN
 
 let has_literal = function 
@@ -191,7 +190,6 @@ let str_of_opcode = function
     | STORE5   ->  "STORE5"
     | STORE6   ->  "STORE6"
     | STORE7   ->  "STORE7"
-    | DUMP     ->  "DUMP"
     | DOWN     ->  "DOWN"
 
 let str_of_lit = function
@@ -292,8 +290,7 @@ let opcodetbl =
     entry "STORE5";
     entry "STORE6";
     entry "STORE7";
-    entry "DUMP"  ~code:(code 0xFE);
-    entry "DOWN"  ~code:(code 0xFF);
+    entry "DOWN";
    ]
    in let valid s = if List.length (List.unique s ~cmp:(fun (s,c) (s1,c1) -> c = c1 )) = (List.length s)
                     then s
