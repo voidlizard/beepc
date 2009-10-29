@@ -410,7 +410,7 @@ struct
             | StAssign(e1,e2,_) -> (typeof_expr e1 (nctx acc), typeof_expr e2 (nctx acc)) :: constr_of_expr e1 (nctx acc) @ constr_of_expr e2 (nctx acc)
             | StWhile((e,_),_)  -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc)
             | StCall(x,_)       -> constr_of_expr x (nctx acc)
-            | StBranch((e,_),_) -> (typeof_expr e (nctx acc), TBool) :: []
+            | StBranch((e,_),_) -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc) @ []
             | _ -> []
             in const @ acc |> ctx.c_unify
         in let folder (total,a) b =
@@ -1064,11 +1064,11 @@ struct
         in let t0 = Unix.gettimeofday()
         in let ast = ast1 |> expand_macros |> expand_typenames |> normalize_ext_funcs
 (*         in let _ = print_funcs ast *)
-        in let _ = printf "MACRO: %f\n" (Unix.gettimeofday() -. t0)
+(*        in let _ = printf "MACRO: %f\n" (Unix.gettimeofday() -. t0)*)
 (*         in let _  = print_funcs ast  *)
         in let initial = globals ast
         in let tbl  = lookup_table ast initial
-(*         in let _ = print_lookup_table tbl *)
+         in let _ = print_lookup_table tbl 
         in let t1 = Unix.gettimeofday()
         in let ctx2 = constraints ast { c_resolv = tbl;
                                         c_glob = initial;
@@ -1077,8 +1077,9 @@ struct
                                         c_unify = unify Uni_final;
                                         c_nm_cache = Hashtbl.create 2000;
                                       }
-        in let _ = printf "CONSTR: %f\n" (Unix.gettimeofday() -. t1)
-        in let _ = printf "CONSTR LENGTH: %d\n" (List.length ctx2.c_constr)
+(*        in let _ = printf "CONSTR: %f\n" (Unix.gettimeofday() -. t1)*)
+(*        in let _ = printf "CONSTR LENGTH: %d\n" (List.length ctx2.c_constr)*)
+(*        in let _ = print_constr ctx2.c_constr*)
         in let t2 = Unix.gettimeofday()
 (*         in let _ = generate_code ast { ctx2 with c_unify = (fun x -> x) } (filename fn) *)
         in let _ = generate_code ast { ctx2 with c_unify = (fun x -> x) } (filename fn)
