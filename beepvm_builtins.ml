@@ -43,8 +43,9 @@ let builtins () = [
     builtin ""                "vect_set"     (TFunNative(Some(18), [TVect(!vect_t);TInt; !vect_t], TVoid)) ;
     builtin ""                "vect_len"     (TFunNative(Some(19), [TVect(!vect_t)], TInt)) ;
  
-    builtin ""                "strfindsub"   (TFunNative(Some(20), [TString;TString], TInt)) ;
-    builtin ""                "mem_stats"    (TFunNative(Some(21), [], TVect(TInt)))         ;
+    builtin ""                "strfindsub"       (TFunNative(Some(20), [TString;TString], TInt)) ;
+    builtin ""                "mem_stats_update" (TFunNative(Some(21), [], TVoid))         ;
+    builtin ""                "mem_stats_get"    (TFunNative(Some(22), [], TInt))          ;
 
     builtin ""                "debug_dump_mem" (TFunNative(Some(0x3F), [],TVoid))            ;
 
