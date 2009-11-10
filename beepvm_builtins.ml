@@ -44,11 +44,12 @@ let builtins () = [
     builtin ""                "vect_len"     (TFunNative(Some(19), [TVect(!vect_t)], TInt)) ;
  
     builtin ""                "strfindsub"   (TFunNative(Some(20), [TString;TString], TInt)) ;
+    builtin ""                "mem_stats"    (TFunNative(Some(21), [], TVect(TInt)))         ;
 
-    builtin ""                "debug_dump_mem" (TFunNative(Some(0x3F), [],TVoid))           ;
+    builtin ""                "debug_dump_mem" (TFunNative(Some(0x3F), [],TVoid))            ;
 
 
-    builtin ""                "alloc"        (TFunEmit("alloc", [TInt],TInt,[ALLOC]))          ;
+    builtin ""                "alloc"        (TFunEmit("alloc", [TInt],TInt,[ALLOC]))        ;
 
     (* CANDIDATES TO OPCODES *)
     builtin ""                "fst"          (TFunEmit("fst",    [TPair(!fst_a, !fst_b)], !fst_a, [RW])) ;
