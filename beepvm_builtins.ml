@@ -45,7 +45,7 @@ let builtins () = [
  
     builtin ""                "strfindsub"       (TFunNative(Some(20), [TString;TString], TInt)) ;
     builtin ""                "mem_stats_update" (TFunNative(Some(21), [], TVoid))         ;
-    builtin ""                "mem_stats_get"    (TFunNative(Some(22), [], TInt))          ;
+    builtin ""                "mem_stats_get"    (TFunNative(Some(22), [TInt], TInt))      ;
 
     builtin ""                "debug_dump_mem" (TFunNative(Some(0x3F), [],TVoid))            ;
 
