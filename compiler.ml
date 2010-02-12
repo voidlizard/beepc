@@ -660,8 +660,9 @@ struct
         | Some(CBr)         -> op (JMP(some ct.end_if)) ~comment:"-> end if" :: []
         | Some(CBrElse)     -> []
         | None              -> assert false
-        and while_head ct e lbegin lend =    (expr ct e |> with_head (function x -> { x with line_id = Some(lbegin) }) )
-                                              @ op (JZ(lend)) :: []
+        and while_head ct e lbegin lend = match e with
+        | ELiteral(LBool(true),_)  -> op NOP ~id:(Some(lbegin)) ~comment:"while" :: []
+        | _ -> (expr ct e |> with_head (function x -> { x with line_id = Some(lbegin) }) ) @ op (JZ(lend)) :: []
         and while_tail lbegin lend   =     op (JMP(lbegin)) 
                                         :: op NOP ~id:(Some(lend))
                                         :: []
