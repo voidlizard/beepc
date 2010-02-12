@@ -3,7 +3,7 @@ open Opcodes
 open Code
 open Util
 
-let optimize c idgen =
+let optimize c idgen verbose =
     let rec opt_rev c = match c with
     | op1::op2::ops -> let ss = opt_pair (op1, op2)
                        in if List.length ss > 0 then ss @ opt_rev ops else op1 :: opt_rev (op2 :: ops)
@@ -16,6 +16,8 @@ let optimize c idgen =
        {opcode=ADDROF(x);comment=c2;line_id=None}) -> {a with opcode = CALL(x);comment=c2;} :: []
     | ({opcode=JMP(x1);comment=c1;line_id=None},
        {opcode=JMP(x2);comment=c2;line_id=None})   -> {a with opcode = JMP(x2);comment=c1^"/"^c2;} :: []
+    | ({opcode=op;line_id=Some(n1)},
+       {opcode=JMP(n2);line_id=None})              -> if n1 = n2 then a :: [] else a :: b :: []
     | _                                            -> []
     in let rc = List.rev
 (*     in let _ = dump_code_lines rc *)
@@ -32,7 +34,7 @@ let optimize c idgen =
                                                                        (List.fold_left (fun acc nop -> (nop,nid) :: acc) tbl nops)
         | []                                 -> (ncode, tbl)
         in let (new_code, repl_tbl) = remove_nops_rec code [] [] []
-        in let _ = List.iter (fun (nop,nid) -> printf "JUMP REPLACE: %04X -> %04X\n" nop nid) repl_tbl
+        in let () = if verbose then List.iter (fun (nop,nid) -> printf "JUMP REPLACE: %04X -> %04X\n" nop nid) repl_tbl
         in let repl n = try List.assoc n repl_tbl with Not_found -> failwith (sprintf "NOT FOUND LBL: %04X" n)
         in let has_repl n = List.mem_assoc n repl_tbl
         in new_code |> List.map (fun x -> match x with

@@ -648,9 +648,9 @@ struct
             in { ctx with c_code = ctx.c_code @ (mark (gen_code func)) @ [op RET] }
         and gen_executable ctx fpath =
             let ep = try entry_point ctx with Not_found -> failwith "No entry point"
-            in let code = op (JMP ep) :: op NOP ~comment:"align" :: ctx.c_data @ (optimize ctx.c_code code_id)
+            in let code = op (JMP ep) :: op NOP ~comment:"align" :: ctx.c_data @ (optimize ctx.c_code code_id opts.comp_verbose)
             in let () = if opts.comp_verbose then dump_code_lines code
-            in let () = if opts.comp_verbose then printf "Generated: %d lines OK\n" (List.length ctx.c_code)
+            in let () = if opts.comp_verbose then printf "Generated: %d lines OK\n" (List.length code)
             in let codes = binary code |> List.map Char.chr
             in output_file fpath (String.implode codes)
         and tail_code ct = match ct.ctp with
