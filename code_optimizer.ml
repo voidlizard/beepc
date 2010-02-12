@@ -28,7 +28,7 @@ let optimize c idgen verbose =
         match code with
         | {line_id=Some(n);opcode=NOP;}::xs  -> remove_nops_rec xs ncode (n::nops) tbl
         | {line_id=None;   opcode=NOP;}::xs  -> remove_nops_rec xs ncode nops tbl
-        | x::xs                              -> if List.length nops == 0
+        | x::xs                              -> if nops == []
                                                 then remove_nops_rec xs (ncode @ [x]) [] tbl
                                                 else
                                                     let nid = match x.line_id with Some(n) -> n | None -> idgen()
