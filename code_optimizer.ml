@@ -18,6 +18,8 @@ let optimize c idgen verbose =
        {opcode=JMP(x2);comment=c2;line_id=None})   -> {a with opcode = JMP(x2);comment=c1^"/"^c2;} :: []
     | ({opcode=op;line_id=Some(n1)},
        {opcode=JMP(n2);line_id=None})              -> if n1 = n2 then a :: [] else a :: b :: []
+    | ({opcode=JZ(n);line_id=None;},
+       {opcode=NOT;line_id=None})                  -> { a with opcode = JNZ(n) } :: []
     | _                                            -> []
     in let rc = List.rev
 (*     in let _ = dump_code_lines rc *)
