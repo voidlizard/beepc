@@ -555,8 +555,6 @@ struct
         and add_code code ct = { ct with gen_code_chunks = code :: ct.gen_code_chunks }
 (*        and add_code code ct = ct*)
 
-        and add_nop ct = ct |> add_code (op NOP :: [])
-
         and add_emit l ct = ct |> add_code ((List.map (fun x -> op x) l))
 
         and incr_locals ct = { ct with gen_func_locals = ct.gen_func_locals + 1 }
@@ -650,7 +648,7 @@ struct
             in { ctx with c_code = ctx.c_code @ (mark (gen_code func)) @ [op RET] }
         and gen_executable ctx fpath =
             let ep = try entry_point ctx with Not_found -> failwith "No entry point"
-            in let code = op (JMP ep) :: op NOP ~comment:"align" :: ctx.c_data @ (optimize ctx.c_code)
+            in let code = op (JMP ep) :: op NOP ~comment:"align" :: ctx.c_data @ (optimize ctx.c_code code_id)
             in let () = if opts.comp_verbose then dump_code_lines code
             in let () = if opts.comp_verbose then printf "Generated: %d lines OK\n" (List.length ctx.c_code)
             in let codes = binary code |> List.map Char.chr
