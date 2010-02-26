@@ -4,7 +4,6 @@ open Opcodes
 open Code
 open Util
 
-
 let optimize c idgen verbose =
     let rec opt_rev c = match c with
     | op1::op2::ops -> let ss = opt_pair (op1, op2)
@@ -55,11 +54,12 @@ let optimize c idgen verbose =
                            :: []
 
         in let rec opt_fun_tails_r code new_code epi1 jumps = match code with
-        | {opcode=RET} :: {opcode=LTMP} :: {opcode=FS(n)} :: {opcode=STMP; line_id=Some(id)} :: xs -> 
+        | {opcode=RET} :: {opcode=LTMP} :: {opcode=FS(n)} :: {opcode=STMP; line_id=Some(id); comment=c} :: xs -> 
             
             let epi1', nid = lookup n epi1 (fun id -> epi_n n id) 
-            in opt_fun_tails_r xs (new_code @ [{opcode=JMP(nid); line_id=Some(id); comment=""}] ) epi1' ((id,nid) :: jumps)
+            in opt_fun_tails_r xs (new_code @ [{opcode=JMP(nid); line_id=Some(id); comment=c}] ) epi1' ((id,nid) :: jumps)
 
+          (* It does not make much sense to replace void epilogue to jump *)
 (*        | {opcode=RET} :: {opcode=FS(n)} :: xs                                   ->*)
 (*            let epi1', nid = lookup n epi1 (fun id -> epi_n_void n id) *)
 (*            in opt_fun_tails_r xs (new_code @ [{opcode=JMP(nid); line_id=Some(id); comment=""}] ) epi1' ((id,nid) :: jumps)*)
