@@ -1,5 +1,6 @@
 "vm_spec.ml": use_camlp4, use_extLib, pp(camlp4of)
 "code.ml": use_extLib
+"code_optimizer.ml": use_extLib
 "escaping.ml": use_extLib
 "syntax.ml": use_extLib
 "compiler.ml": use_extLib, use_unix
