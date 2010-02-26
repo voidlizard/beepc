@@ -57,7 +57,7 @@ let optimize c idgen verbose =
         | {opcode=RET} :: {opcode=LTMP} :: {opcode=FS(n)} :: {opcode=STMP; line_id=Some(id); comment=c} :: xs -> 
             
             let epi1', nid = lookup n epi1 (fun id -> epi_n n id) 
-            in opt_fun_tails_r xs ( [{opcode=JMP(nid); line_id=Some(id); comment=c}] @ new_code ) epi1' ((id,nid) :: jumps)
+            in opt_fun_tails_r xs ( {opcode=JMP(nid); line_id=Some(id); comment=c} :: new_code ) epi1' ((id,nid) :: jumps)
 
           (* It does not make much sense to replace void epilogue to jump *)
 (*        | {opcode=RET} :: {opcode=FS(n)} :: xs                                   ->*)
