@@ -67,7 +67,6 @@ let optimize c idgen verbose =
         | x :: xs                             -> opt_fun_tails_r xs (x :: new_code) epi1 jumps
         | []                                  -> (new_code, epi1, jumps)
         in let (new_code, epi1, jumps) = opt_fun_tails_r code [] [] []
-        in let () = printf "REPL0 SIZE: %d\n" (List.length jumps)
         in (List.fold_left (fun acc (_,(_,c)) -> acc @ c) (List.rev new_code) epi1 ) |> update_jumps jumps 
 
     in let rc = List.rev
@@ -85,7 +84,6 @@ let optimize c idgen verbose =
                                                                        (List.fold_left (fun acc nop -> (nop,nid) :: acc) tbl nops)
         | []                                 -> (ncode, tbl)
         in let (new_code, repl_tbl) = remove_nops_rec code [] [] []
-        in let () = printf "REPL1 SIZE: %d\n" (List.length repl_tbl)
         in update_jumps repl_tbl new_code 
 
     in let opt = remove_nops c |> rc |> opt_rev |> opt_fun_tails |> List.rev
