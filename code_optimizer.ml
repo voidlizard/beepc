@@ -57,17 +57,18 @@ let optimize c idgen verbose =
         | {opcode=RET} :: {opcode=LTMP} :: {opcode=FS(n)} :: {opcode=STMP; line_id=Some(id); comment=c} :: xs -> 
             
             let epi1', nid = lookup n epi1 (fun id -> epi_n n id) 
-            in opt_fun_tails_r xs (new_code @ [{opcode=JMP(nid); line_id=Some(id); comment=c}] ) epi1' ((id,nid) :: jumps)
+            in opt_fun_tails_r xs ( [{opcode=JMP(nid); line_id=Some(id); comment=c}] @ new_code ) epi1' ((id,nid) :: jumps)
 
           (* It does not make much sense to replace void epilogue to jump *)
 (*        | {opcode=RET} :: {opcode=FS(n)} :: xs                                   ->*)
 (*            let epi1', nid = lookup n epi1 (fun id -> epi_n_void n id) *)
 (*            in opt_fun_tails_r xs (new_code @ [{opcode=JMP(nid); line_id=Some(id); comment=""}] ) epi1' ((id,nid) :: jumps)*)
 
-        | x :: xs                             -> opt_fun_tails_r xs (new_code @ [x]) epi1 jumps
+        | x :: xs                             -> opt_fun_tails_r xs (x :: new_code) epi1 jumps
         | []                                  -> (new_code, epi1, jumps)
         in let (new_code, epi1, jumps) = opt_fun_tails_r code [] [] []
-        in new_code @ (List.fold_left (fun acc (_,(_,c)) -> acc @ c) [] epi1 ) |> update_jumps jumps 
+        in let () = printf "REPL0 SIZE: %d\n" (List.length jumps)
+        in (List.fold_left (fun acc (_,(_,c)) -> acc @ c) (List.rev new_code) epi1 ) |> update_jumps jumps 
 
     in let rc = List.rev
 (*     in let _ = dump_code_lines rc *)
@@ -84,10 +85,10 @@ let optimize c idgen verbose =
                                                                        (List.fold_left (fun acc nop -> (nop,nid) :: acc) tbl nops)
         | []                                 -> (ncode, tbl)
         in let (new_code, repl_tbl) = remove_nops_rec code [] [] []
-        in let () = if verbose then List.iter (fun (nop,nid) -> printf "JUMP REPLACE: %04X -> %04X\n" nop nid) repl_tbl
+        in let () = printf "REPL1 SIZE: %d\n" (List.length repl_tbl)
         in update_jumps repl_tbl new_code 
 
-    in let opt = remove_nops c |> rc |> opt_rev |>  opt_fun_tails |> List.rev
+    in let opt = remove_nops c |> rc |> opt_rev |> opt_fun_tails |> List.rev
 (*     in let _ = print_endline "" ; print_endline "" *)
 (*     in let _ = dump_code_lines opt *)
     in opt 
