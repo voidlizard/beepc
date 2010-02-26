@@ -24,6 +24,30 @@ let optimize c idgen verbose =
     | ({opcode=op;line_id=Some(n1)},
        {opcode=JMP(n2);line_id=None})              -> if n1 == n2 then a :: [] else []
     | _                                            -> []
+
+ 
+    in let opt_fun_tails code new_code     =
+        let rec opt_fun_tails_r code = match code with
+        | {opcode=RET} :: {opcode=LTMP} :: {opcode=FS(n)} :: {opcode=STMP} :: xs -> failwith "FIND SEQUENCE!"
+        | {opcode=RET} :: {opcode=FS(n)} :: xs                                   -> failwith "FIND SOMETHING ELSE!"
+        | x :: xs                             -> opt_fun_tails_r xs
+        | []                                  -> code
+        in opt_fun_tails_r code
+
+
+    in let update_jumps code repl_tbl =
+        let repl n = List.assoc n repl_tbl
+        in let subst op =
+        try
+            match op with
+            | {opcode=JMP(n)}  -> { op with opcode = JMP(repl n) }
+            | {opcode=JNZ(n)}  -> { op with opcode = JNZ(repl n) }
+            | {opcode=JZ(n)}   -> { op with opcode = JZ(repl n) }
+            | {opcode=CALL(n)} -> { op with opcode = CALL(repl n)}
+            | x                -> x
+        with Not_found -> op
+        in List.map subst code
+
     in let rc = List.rev
 (*     in let _ = dump_code_lines rc *)
     in let remove_nops code =
@@ -40,17 +64,9 @@ let optimize c idgen verbose =
         | []                                 -> (ncode, tbl)
         in let (new_code, repl_tbl) = remove_nops_rec code [] [] []
         in let () = if verbose then List.iter (fun (nop,nid) -> printf "JUMP REPLACE: %04X -> %04X\n" nop nid) repl_tbl
-        in let repl n = try List.assoc n repl_tbl with Not_found -> failwith (sprintf "NOT FOUND LBL: %04X" n)
-        in let has_repl n = List.mem_assoc n repl_tbl
-        in new_code |> List.map (fun x -> match x with
-                                         | {opcode=JMP(n)}  when has_repl n -> { x with opcode = JMP(repl n) }
-                                         | {opcode=JNZ(n)}  when has_repl n -> { x with opcode = JNZ(repl n) }
-                                         | {opcode=JZ(n)}   when has_repl n -> { x with opcode = JZ(repl n) }
-                                         | {opcode=CALL(n)} when has_repl n -> { x with opcode = CALL(repl n)}
-                                         | _                -> x
-                                 )
+        in update_jumps new_code repl_tbl
 
-    in let opt = remove_nops c |> rc |> opt_rev |> List.rev
+    in let opt = remove_nops c |> rc |> opt_rev (*|>  opt_fun_tails*) |> List.rev
 (*     in let _ = print_endline "" ; print_endline "" *)
 (*     in let _ = dump_code_lines opt *)
     in opt 
