@@ -15,6 +15,7 @@ let in_file_name = Sys.argv.(1)
 type opts  = {
     mutable verbose : bool;
     mutable file    : string;
+    mutable preprocessor: string option;
 }
 
 exception DoSkel
@@ -23,15 +24,18 @@ exception DoEnum
 
 let _ =
     try
-        let o = { verbose = false; file = "" }
+        (* FIXME: fails if no arguments *)
+        let o = { verbose = false; file = ""; preprocessor = None }
         in let _ = Arg.parse [
-                                ("--enum",    Arg.Unit(fun () -> raise DoEnum  ), "generate vm enum");
-                                ("--skel",    Arg.Unit(fun () -> raise DoSkel  ), "generate vm skeleton");
-                                ("--array",   Arg.Unit(fun () -> raise DoArray ), "generate vm bytecode array");
+                                ("--enum",       Arg.Unit(fun () -> raise DoEnum  ), "generate vm enum");
+                                ("--skel",       Arg.Unit(fun () -> raise DoSkel  ), "generate vm skeleton");
+                                ("--array",      Arg.Unit(fun () -> raise DoArray ), "generate vm bytecode array");
+                                ("--preprocess", Arg.String(fun s -> o.preprocessor <- Some(s) ), "use preprocessor");
                                 ("--verbose", Arg.Unit(fun () -> o.verbose <- true                  ), "be verbose");
                              ] (fun x -> o.file <- x ) "Usage:"
         in let co = { Compiler.comp_verbose=o.verbose;
-                      Compiler.comp_stubs=Some((stubs_file_name o.file))
+                      Compiler.comp_stubs=Some((stubs_file_name o.file));
+                      Compiler.comp_prep=o.preprocessor
                     }
         in Compiler.compile_file co o.file (out_file_name o.file)
 

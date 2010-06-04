@@ -1,6 +1,6 @@
 module Compiler =  
 struct
-    type compiler_opts = { comp_verbose: bool; comp_stubs: string option }
+    type compiler_opts = { comp_verbose: bool; comp_stubs: string option; comp_prep: string option }
 
     open ExtList
     open ExtHashtbl
@@ -1091,8 +1091,24 @@ struct
 
       in ()
 
+    let with_file fn func = 
+        let f = open_in fn
+        in try 
+                func f
+           with x ->
+                close_in f;
+                raise x
+
+    (* FIXME: fails if there is no file's extension *)
     let compile_file (opts:compiler_opts) in_f out_f =
-        let lex = in_f |> input_file |> Message.lexer_from_string ~fn:(Some(in_f))
+        let inp = match opts.comp_prep with 
+                  | None    -> with_file in_f input_all 
+                  | Some(s) -> let pin = Unix.open_process_in (sprintf "%s %s" s in_f)
+                               in let s = input_all pin
+                               in let _ = Unix.close_process_in pin
+                               in s
+        in let _ = if opts.comp_verbose && opts.comp_prep <> None then print_endline inp
+        in let lex = inp |> Message.lexer_from_string ~fn:(Some(in_f))
         in try
             let ast  = Parser.toplevel Lexer.token lex
             in let _ = compile_ast opts ~fname:(Some out_f) ast
