@@ -5,7 +5,8 @@ syn keyword	beepType       int string bool void
 
 syn keyword beepBool       true false
 
-syn match   beepComment "#.*$" contains=beepTodo,@Spell
+syn match   beepComment  "#.*$"  contains=beepTodo,@Spell
+syn match   beepComment2 "%%.*$" contains=beepTodo,@Spell
 
 syn keyword beepTodo  TODO FIXME XXX contained
 
@@ -41,6 +42,7 @@ syn match  beepEscape		"\\$"
 hi def link beepStatement Statement
 hi def link beepStructure Type
 hi def link beepComment   Comment 
+hi def link beepComment2  Comment 
 hi def link beepTodo      Todo 
 hi def link beepNumber    Number
 hi def link beepBool      Number

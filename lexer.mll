@@ -20,7 +20,8 @@ let hexadecimal = ("0x" | "0X") hexdigit hexdigit*
 let space   = [' ' '\t']
 
 rule token = parse
-	"#" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
+	| "#"  [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
+	| "%%" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
 	| space           { token lexbuf }
 	| '\n'            { incr_linenum lexbuf; token lexbuf }
 	| "="             { ASSIGN }
