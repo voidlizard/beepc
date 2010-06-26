@@ -408,6 +408,7 @@ struct
             | StWhile((e,_),_)  -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc)
             | StCall(x,_)       -> constr_of_expr x (nctx acc)
             | StBranch((e,_),_) -> (typeof_expr e (nctx acc), TBool) :: constr_of_expr e (nctx acc)  @ []
+            | StRet(e,_)        -> constr_of_expr e (nctx acc) 
             | _ -> []
             in const @ acc |> ctx.c_unify
         in let code_fold acc code = 
