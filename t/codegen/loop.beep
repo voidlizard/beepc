@@ -33,6 +33,6 @@ def main()
 	putc('S');
 	putc('\n');
 	do_empty_call();
-	debug_dump();
+	%%debug_dump();
 }
 
