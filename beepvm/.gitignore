@@ -1,0 +1,2 @@
+beepvm_builtins_portable.o beepvm_mem.o beepvm.o
+*.o

@@ -1,0 +1,22 @@
+WARNINGS=" ".join([
+	 '-Wall' 
+])
+
+CCFLAGS_DEBUG = " ".join([ '-Os'
+                           ,'-g'
+						   ,WARNINGS
+                           ,"-DBEEPVM_HIENDIAN"
+                           ,"-DX86_DBG=1"
+])
+
+
+env = Environment( CCFLAGS=CCFLAGS_DEBUG, CPPPATH=['.'] )
+
+env.Program ( 'beepvm', ['beepvm_emu.c',
+                         'beepvm.c',
+                         'beepvm_mem.c',
+                         'beepvm_builtins_portable.c',
+                         'beepvm_builtins.c', 
+                         'beepvm_stubs.c',
+                         ])
+
