@@ -30,7 +30,8 @@ Examples
 	helloworld_stubs.h
 
 The output:
-    - helloworld.bin --- bytecodes file
-	- helloworld\_stubs.c --- stubs
-	- helloworld\_stubs.h --- stubs
+
+  - helloworld.bin --- bytecodes file
+  - helloworld\_stubs.c --- stubs
+  - helloworld\_stubs.h --- stubs
 
