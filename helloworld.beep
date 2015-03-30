@@ -1,0 +1,8 @@
+@extern debug_dump(void):void;
+
+def main()
+{
+	puts("HELLO WORLD");
+	debug_dump();
+}
+
